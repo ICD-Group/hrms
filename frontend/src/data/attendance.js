@@ -5,8 +5,8 @@ import dayjs from "@/utils/dayjs"
 
 
 export const getDates = (shift) => {
-	const fromDate = dayjs(shift.from_date).format("D MMM")
-	const toDate = shift.to_date ? dayjs(shift.to_date).format("D MMM") : "Ongoing"
+	const fromDate = dayjs(shift.from_date).format("DD-MM")
+	const toDate = shift.to_date ? dayjs(shift.to_date).format("DD-MM") : "Ongoing"
 	return fromDate == toDate ? fromDate : `${fromDate} - ${toDate}`
 }
 
@@ -18,8 +18,8 @@ export const getTotalDays = (shift) => {
 }
 
 export const getShiftDates = (shift) => {
-	const startDate = dayjs(shift.start_date).format("D MMM")
-	const endDate = shift.end_date ? dayjs(shift.end_date).format("D MMM") : "Ongoing"
+	const startDate = dayjs(shift.start_date).format("DD-MM")
+	const endDate = shift.end_date ? dayjs(shift.end_date).format("DD-MM") : "Ongoing"
 	return startDate == endDate ? startDate : `${startDate} - ${endDate}`
 }
 
@@ -34,7 +34,7 @@ export const getShiftTiming = (shift) => {
 	return (
 		shift.start_time.split(":").slice(0, 2).join(":") +
 		" - " +
-		shift.end_time.split(":").splice(0, 2).join(":")
+		shift.end_time.split(":").slice(0, 2).join(":")
 	)
 }
 

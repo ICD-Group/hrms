@@ -18,7 +18,7 @@
 				:key="holiday.holiday_date"
 			>
 				<div class="flex flex-row items-center gap-3 grow">
-					<FeatherIcon name="calendar" class="h-5 w-5 text-gray-500" />
+					<FeatherIcon name="calendar" class="h-5 w-5 text-gray-700" />
 					<div class="text-base font-normal text-gray-800">
 						{{ __(holiday.description) }}
 					</div>
@@ -50,7 +50,7 @@
 					class="flex flex-row items-center justify-between w-full"
 				>
 					<div class="flex flex-row items-center gap-3 grow">
-						<FeatherIcon name="calendar" class="h-5 w-5 text-gray-500" />
+						<FeatherIcon name="calendar" class="h-5 w-5 text-gray-700" />
 						<div class="text-base font-normal text-gray-800">
 							{{ __(holiday.description) }}
 						</div>
@@ -58,7 +58,7 @@
 					<div
 						:class="[
 							'text-base font-bold',
-							holiday.is_upcoming ? 'text-gray-800' : 'text-gray-500',
+							holiday.is_upcoming ? 'text-gray-800' : 'text-gray-700',
 						]"
 					>
 						{{ holiday.formatted_holiday_date }}
@@ -88,7 +88,7 @@ const holidays = createResource({
 		return data.map((holiday) => {
 			const holidayDate = dayjs(holiday.holiday_date)
 			holiday.is_upcoming = holidayDate.isAfter(dayjs())
-			holiday.formatted_holiday_date = holidayDate.format("ddd, D MMM YYYY")
+			holiday.formatted_holiday_date = holidayDate.format("ddd, DD-MM-YYYY")
 			return holiday
 		})
 	},

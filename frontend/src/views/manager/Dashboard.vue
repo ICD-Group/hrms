@@ -1,0 +1,1050 @@
+<template>
+	<BaseLayout :pageTitle="__('Dashboard')">
+		<template #body>
+			<div class="flex flex-col mt-1 mb-2 gap-2.5">
+				<!-- ========== HERO ========== -->
+				<div class="hero overflow-hidden rounded-xl mx-2 animate-scale-in">
+					<div class="hero-gradient px-3 py-2 text-white">
+						<div class="flex items-center gap-2">
+							<!-- Left: Team count + date -->
+							<div class="min-w-0 flex-shrink-0">
+								<div class="text-sm font-semibold opacity-70">{{ dayjs().format("ddd, DD-MM-YYYY") }}</div>
+								<div class="flex items-baseline gap-1.5">
+									<span class="text-[32px] font-black leading-none">{{ dashboard.total_employees }}</span>
+									<span class="text-sm font-semibold opacity-70">team</span>
+								</div>
+								<div v-if="shiftInfo" class="inline-flex items-center gap-1 mt-1 text-sm font-semibold bg-white/15 px-1.5 py-0.5 rounded-md text-white">
+									<FeatherIcon name="clock" class="w-2.5 h-2.5" /> {{ shiftInfo }}
+								</div>
+							</div>
+							<!-- Center: Team PRD circle -->
+							<div class="flex-1 flex justify-center items-center">
+								<CircleScore v-if="teamProd.data"
+									:value="teamProd.data.avg_score || 0" :maxValue="100"
+									label="TEAM" :size="68" />
+							</div>
+							<!-- Right: ATT circle + Punctuality -->
+							<div class="flex-shrink-0 flex items-center gap-2">
+								<CircleScore
+									:value="attendanceRate" :maxValue="100"
+									label="ATT" :size="68" />
+								<CircleScore
+									:value="punctualityRate" :maxValue="100"
+									label="PUNC" :size="68" />
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- ========== STAT CARDS - 3x2 iOS Grid - CENTERED with ICONS ========== -->
+				<div class="grid grid-cols-3 gap-1.5 px-2 -mt-1">
+					<button v-for="card in allManagerCards" :key="card.key"
+						@click="card.count > 0 ? openSheet(card) : null"
+						class="stat-card active:scale-95 transition-transform"
+						:class="[mgrCardBg(card.key), { 'opacity-30 cursor-default': card.count === 0 }]">
+						<div class="card-row">
+							<FeatherIcon :name="cardIcon(card.key)" class="card-icon" />
+							<span class="card-num">{{ card.count }}</span>
+						</div>
+						<div class="card-label">{{ card.label }}</div>
+					</button>
+				</div>
+
+				<!-- ========== UNIFIED ACTIONS NEEDED ========== -->
+			<div class="px-2 mgr-da-wrap" :class="{ 'mgr-da-show': mgrAlertShow }">
+				<div class="mgr-da-alert rounded-xl overflow-hidden" @click="router.push('/manager/command')">
+					<div :class="mgrHasDA ? 'mgr-da-grad' : 'mgr-da-grad-amber'" class="px-3.5 py-2.5">
+						<div class="flex items-center gap-3">
+							<div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+								<FeatherIcon :name="mgrHasDA ? 'shield' : 'bell'" class="w-4.5 h-4.5 text-white" />
+							</div>
+							<div class="flex-1 min-w-0">
+								<div class="text-sm font-bold text-white leading-tight">Actions Needed</div>
+								<div class="flex flex-wrap gap-1 mt-1">
+									<span v-for="item in mgrAlertItems" :key="item.label"
+										class="text-sm font-bold px-1.5 py-0.5 rounded-md"
+										:class="item.urgent ? 'bg-white/30 text-white' : 'bg-white/15 text-white/80'">
+										{{ item.n }} {{ item.label }}
+									</span>
+								</div>
+							</div>
+							<FeatherIcon name="chevron-right" class="w-4 h-4 text-white/40 flex-shrink-0" />
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- ========== INSIGHTS (Punctuality + Departments) ========== -->
+				<div class="glass-section rounded-xl p-3.5 mx-3">
+					<div v-if="totalCheckedIn > 0">
+						<div class="flex items-center gap-2">
+							<div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+								<FeatherIcon name="zap" class="w-4.5 h-4.5 text-amber-600" style="width:22px;height:22px" />
+							</div>
+							<span class="text-sm font-bold text-gray-800">Punctuality</span>
+							<span class="ml-auto text-lg font-black" :class="puncColor">{{ punctualityRate }}%</span>
+						</div>
+						<div class="bar-track mt-2">
+							<div class="bar-fill" :class="puncBarCls" :style="{ width: punctualityRate + '%' }"></div>
+						</div>
+						<div class="flex justify-between mt-1.5">
+							<span class="text-sm font-semibold text-gray-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {{ onTimeCount }} on time</span>
+							<span class="text-sm font-semibold text-gray-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {{ lateCount }} late</span>
+						</div>
+					</div>
+					<div v-if="departments.length > 1" :class="{ 'mt-3 pt-3 border-t border-white/40': totalCheckedIn > 0 }">
+						<div class="flex items-center gap-2 mb-2.5">
+							<div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+								<FeatherIcon name="layers" class="w-4.5 h-4.5 text-blue-600" style="width:22px;height:22px" />
+							</div>
+							<span class="text-sm font-bold text-gray-800">Departments</span>
+						</div>
+						<div class="flex flex-col gap-2">
+							<div v-for="dept in departments" :key="dept.name">
+								<div class="flex items-center justify-between">
+									<span class="text-sm font-semibold text-gray-700">{{ dept.shortName }}</span>
+									<span class="text-sm font-extrabold" :class="dept.rate >= 75 ? 'text-emerald-600' : dept.rate >= 40 ? 'text-amber-600' : 'text-red-500'">{{ dept.present }}/{{ dept.total }}</span>
+								</div>
+								<div class="bar-track bar-track--sm mt-1">
+									<div class="bar-fill" :style="{ width: Math.max(dept.rate, 3) + '%' }"
+										:class="dept.rate >= 75 ? 'bg-emerald-500' : dept.rate >= 40 ? 'bg-amber-500' : 'bg-red-400'"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- ========== TEAM (small cards grid) ========== -->
+				<div class="glass-section rounded-xl overflow-hidden mx-3">
+					<div class="flex items-center gap-2.5 p-3.5 pb-2.5">
+						<div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+							<FeatherIcon name="users" class="w-4.5 h-4.5 text-indigo-600" style="width:22px;height:22px" />
+						</div>
+						<span class="text-sm font-bold text-gray-800">Team</span>
+						<span class="ml-auto text-sm font-semibold text-gray-600">{{ allEmployees.length }} members</span>
+					</div>
+					<div v-for="group in teamGroups" :key="group.key">
+						<div v-if="group.employees.length > 0">
+							<!-- Section Header -->
+							<div class="flex items-center gap-1.5 px-3.5 py-1.5">
+								<span class="w-1.5 h-1.5 rounded-full flex-shrink-0" :class="group.dot"></span>
+								<span class="text-sm font-bold" :class="group.txt">{{ group.label }}</span>
+								<span class="text-sm font-extrabold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{{ group.employees.length }}</span>
+							</div>
+							<!-- Cards Grid -->
+							<div class="grid grid-cols-2 gap-1.5 px-3 pb-2">
+								<button
+									v-for="emp in group.employees"
+									:key="emp.employee"
+									@click="openEmpDetail(emp)"
+									class="emp-mini active:scale-[0.96] transition-transform"
+								>
+									<!-- Status accent bar -->
+									<div class="absolute top-0 left-0 right-0 h-[2.5px] rounded-t-lg" :class="group.bar || empBarCls(emp._status)"></div>
+									<!-- Avatar + Name -->
+									<div class="flex items-center gap-1">
+										<div class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" :style="{ backgroundColor: group.av }">
+											{{ emp.employee_name?.[0] || '?' }}
+										</div>
+										<div class="flex-1 min-w-0">
+											<div class="text-sm font-bold text-gray-800 truncate leading-tight">{{ emp.employee_name?.trim().split(/\s+/).filter(Boolean).slice(0,2).join(' ') }}</div>
+											<div class="text-[8px] text-gray-600 truncate leading-tight mt-0.5">{{ emp.department?.replace(/ - I$/, '') || '' }}</div>
+										</div>
+									</div>
+									<!-- Detail value: IN / LATE / OUT -->
+									<div class="flex items-center justify-between mt-1.5 pt-1.5 border-t" style="border-color: rgba(0,0,0,0.04);">
+										<!-- IN time -->
+										<span v-if="['present','late','wfh','checked_out'].includes(emp._status)" class="inline-flex items-center gap-0.5 text-sm font-extrabold text-green-600">
+											<span class="text-[8px]">IN</span> {{ formatTime(emp.check_in_time) }}
+										</span>
+										<span v-else class="text-sm font-bold" :class="group.detailCls">{{ group.detailFn(emp) }}</span>
+
+										<!-- LATE / OT badge (between IN and OUT) -->
+										<span v-if="emp.late_minutes > 0" class="late-circle">L</span>
+										<span v-else-if="['present','wfh','checked_out'].includes(emp._status)" class="ot-circle">OT</span>
+
+										<!-- OUT time / hours / WFH -->
+										<span v-if="emp.check_out_time && ['checked_out'].includes(emp._status)" class="inline-flex items-center gap-0.5 text-sm font-extrabold text-red-600">
+											<span class="text-[8px]">OUT</span> {{ formatTime(emp.check_out_time) }}
+										</span>
+										<span v-else-if="emp._status === 'checked_out' && emp.working_hours" class="text-sm font-bold text-gray-700">{{ emp.working_hours.toFixed(1) }}h</span>
+										<span v-else-if="emp._status === 'wfh' && emp.wfh_office_days_required" class="text-sm font-bold px-1 py-0.5 rounded" :class="emp.wfh_office_days_compliant ? 'text-emerald-700 bg-emerald-50' : 'text-amber-700 bg-amber-50'">{{ emp.wfh_office_days_actual || 0 }}/{{ emp.wfh_office_days_required }}d</span>
+									</div>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- ========== MENU: ATTENDANCE ========== -->
+				<div class="flex flex-col gap-2 w-full px-3">
+					<div class="text-lg font-medium text-gray-900">Attendance</div>
+					<div class="flex flex-col glass-section rounded-xl overflow-hidden">
+						<button v-for="(item, idx) in attendanceMenu" :key="item.label"
+							@click="goTo(item.path)"
+							class="flex flex-row items-center p-2.5 justify-between active:bg-white/30 transition-colors"
+							:class="idx !== attendanceMenu.length - 1 && 'border-b border-white/40'">
+							<div class="flex flex-row items-center gap-2.5 grow">
+								<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" :class="item.bg">
+									<FeatherIcon :name="item.icon" class="h-[22px] w-[22px]" :class="item.fg" />
+								</div>
+								<div class="text-base font-medium text-gray-800">{{ item.label }}</div>
+							</div>
+							<FeatherIcon name="chevron-right" class="h-4 w-4 text-gray-600" />
+						</button>
+					</div>
+				</div>
+
+				<!-- ========== MENU: LEAVE & SHIFTS ========== -->
+				<div class="flex flex-col gap-2 w-full px-3">
+					<div class="text-lg font-medium text-gray-900">Leave & Shifts</div>
+					<div class="flex flex-col glass-section rounded-xl overflow-hidden">
+						<button v-for="(item, idx) in leaveMenu" :key="item.label"
+							@click="goTo(item.path)"
+							class="flex flex-row items-center p-2.5 justify-between active:bg-white/30 transition-colors"
+							:class="idx !== leaveMenu.length - 1 && 'border-b border-white/40'">
+							<div class="flex flex-row items-center gap-2.5 grow">
+								<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" :class="item.bg">
+									<FeatherIcon :name="item.icon" class="h-[22px] w-[22px]" :class="item.fg" />
+								</div>
+								<div class="text-base font-medium text-gray-800">{{ item.label }}</div>
+							</div>
+							<FeatherIcon name="chevron-right" class="h-4 w-4 text-gray-600" />
+						</button>
+					</div>
+				</div>
+
+				<!-- ========== MENU: PAYROLL ========== -->
+				<div class="flex flex-col gap-2 w-full px-3">
+					<div class="text-lg font-medium text-gray-900">Payroll</div>
+					<div class="flex flex-col glass-section rounded-xl overflow-hidden">
+						<button v-for="(item, idx) in payrollMenu" :key="item.label"
+							@click="goTo(item.path)"
+							class="flex flex-row items-center p-2.5 justify-between active:bg-white/30 transition-colors"
+							:class="idx !== payrollMenu.length - 1 && 'border-b border-white/40'">
+							<div class="flex flex-row items-center gap-2.5 grow">
+								<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" :class="item.bg">
+									<FeatherIcon :name="item.icon" class="h-[22px] w-[22px]" :class="item.fg" />
+								</div>
+								<div class="text-base font-medium text-gray-800">{{ item.label }}</div>
+							</div>
+							<FeatherIcon name="chevron-right" class="h-4 w-4 text-gray-600" />
+						</button>
+					</div>
+				</div>
+
+				<!-- Spacer -->
+				<div class="h-4"></div>
+			</div>
+
+			<!-- ========== BOTTOM SHEET ========== -->
+			<Teleport to="body">
+				<Transition name="sheet">
+					<div v-if="sheetOpen" class="sheet-overlay" @click.self="sheetOpen = false">
+						<div class="sheet-panel">
+							<div class="flex justify-center pt-2 pb-1">
+								<div class="w-9 h-[5px] rounded-full bg-black/15"></div>
+							</div>
+							<div class="sheet-hdr" :style="{ background: activeCard?.color }">
+								<FeatherIcon :name="cardIcon(activeCard?.key)" class="w-5 h-5 text-white" />
+								<div class="flex-1">
+									<div class="text-[18px] font-bold text-white" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;">{{ activeCard?.label }}</div>
+									<div class="text-[13px] font-medium text-white/70">{{ activeCard?.count }} employees</div>
+								</div>
+								<button @click="sheetOpen = false" class="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center text-white">
+									<FeatherIcon name="x" class="w-4 h-4" />
+								</button>
+							</div>
+							<div class="sheet-body">
+								<div v-for="emp in activeCard?.employees || []" :key="emp.employee" class="sheet-emp">
+									<div class="w-10 h-10 rounded-full flex items-center justify-center text-[17px] font-bold text-white flex-shrink-0 shadow-md" :style="{ background: activeCard?.color }">
+										{{ emp.employee_name?.[0] || '?' }}
+									</div>
+									<div class="flex-1 min-w-0">
+										<div class="text-[16px] font-semibold text-gray-900" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;">{{ emp.employee_name }}</div>
+										<div class="text-[13px] font-medium text-gray-800" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;">{{ emp.department || '' }}</div>
+									</div>
+									<div class="flex flex-col items-end gap-0.5">
+										<template v-if="activeCard?.key === 'present'">
+											<span class="text-[16px] font-extrabold text-emerald-600">{{ formatTime(emp.check_in_time) }}</span>
+											<span class="text-[13px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">On Time</span>
+										</template>
+										<template v-else-if="activeCard?.key === 'late'">
+											<span class="text-[16px] font-extrabold text-amber-600">{{ formatLateTime(emp.late_minutes) }}</span>
+											<span class="text-[13px] font-bold text-emerald-600">IN {{ formatTime(emp.check_in_time) }}</span>
+										</template>
+										<template v-else-if="activeCard?.key === 'checked_out'">
+											<div class="flex flex-col items-end gap-0.5">
+												<span class="text-[14px] font-extrabold text-emerald-600">IN {{ formatTime(emp.check_in_time) }}</span>
+												<span class="text-[14px] font-extrabold text-red-600">OUT {{ formatTime(emp.check_out_time) }}</span>
+											</div>
+											<span class="text-[13px] font-bold text-gray-800">{{ emp.working_hours?.toFixed(1) }}h</span>
+										</template>
+										<template v-else-if="activeCard?.key === 'not_arrived'">
+											<span class="text-[13px] text-red-500 font-semibold italic">No check-in</span>
+										</template>
+										<template v-else-if="activeCard?.key === 'on_leave'">
+											<span class="text-[13px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{{ emp.leave_type || 'Leave' }}</span>
+										</template>
+									</div>
+								</div>
+								<div v-if="!activeCard?.employees?.length" class="py-10 text-center text-sm text-gray-800">
+									No employees
+								</div>
+							</div>
+						</div>
+					</div>
+				</Transition>
+			</Teleport>
+
+			<!-- ========== INDIVIDUAL EMPLOYEE DETAIL SHEET ========== -->
+			<Teleport to="body">
+				<Transition name="sheet">
+					<div v-if="empDetailOpen" class="sheet-overlay" @click.self="empDetailOpen = false">
+						<div class="sheet-panel">
+							<div class="flex justify-center pt-2 pb-1">
+								<div class="w-9 h-[5px] rounded-full bg-black/15"></div>
+							</div>
+							<!-- Header with status color -->
+							<div class="sheet-hdr" :style="{ background: empColor(selectedEmp?._status) }">
+								<div class="w-10 h-10 rounded-full bg-white/25 flex items-center justify-center text-[18px] font-bold text-white flex-shrink-0">
+									{{ selectedEmp?.employee_name?.[0] || '?' }}
+								</div>
+								<div class="flex-1 min-w-0">
+									<div class="text-[18px] font-bold text-white truncate" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;">{{ selectedEmp?.employee_name }}</div>
+									<div class="text-[13px] font-medium text-white/70">{{ selectedEmp?.department || selectedEmp?.designation || '' }}</div>
+								</div>
+								<button @click="empDetailOpen = false" class="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center text-white">
+									<FeatherIcon name="x" class="w-4 h-4" />
+								</button>
+							</div>
+							<!-- Body -->
+							<div class="sheet-body" v-if="selectedEmp">
+								<!-- Attendance Card -->
+								<div class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+									<div class="flex items-center gap-2 mb-3">
+										<FeatherIcon name="activity" class="w-4 h-4" :class="empLabelCls(selectedEmp._status)" />
+										<span class="text-[14px] font-bold text-gray-900">Today's Attendance</span>
+										<span class="ml-auto text-[13px] font-bold px-2 py-0.5 rounded-full" :class="empBadgeCls(selectedEmp._status)">{{ empLabel(selectedEmp) }}</span>
+									</div>
+									<div class="grid grid-cols-3 gap-3">
+										<div class="text-center">
+											<div class="text-[13px] text-gray-800 font-semibold uppercase tracking-wider">Check In</div>
+											<div class="text-[17px] font-extrabold text-emerald-600 mt-1">{{ formatTime(selectedEmp.check_in_time) }}</div>
+										</div>
+										<div class="text-center">
+											<div class="text-[13px] text-gray-800 font-semibold uppercase tracking-wider">Check Out</div>
+											<div class="text-[17px] font-extrabold mt-1" :class="selectedEmp.check_out_time ? 'text-red-600' : 'text-gray-900'">{{ selectedEmp.check_out_time ? formatTime(selectedEmp.check_out_time) : '--:--' }}</div>
+										</div>
+										<div class="text-center">
+											<div class="text-[13px] text-gray-800 font-semibold uppercase tracking-wider">Hours</div>
+											<div class="text-[17px] font-bold text-gray-800 mt-1">{{ selectedEmp.working_hours ? selectedEmp.working_hours.toFixed(1) + 'h' : '--' }}</div>
+										</div>
+									</div>
+									<!-- Late info -->
+									<div v-if="selectedEmp.late_minutes > 0" class="mt-3 pt-3 border-t border-gray-50 flex items-center gap-2">
+										<FeatherIcon name="alert-circle" class="w-3.5 h-3.5 text-amber-500" />
+										<span class="text-[13px] font-bold text-amber-700">{{ formatLateTime(selectedEmp.late_minutes) }} late</span>
+										<span class="text-[13px] text-gray-800 ml-auto">Arrived {{ formatTime(selectedEmp.check_in_time) }}</span>
+									</div>
+									<!-- Leave info -->
+									<div v-if="selectedEmp._status === 'on_leave'" class="mt-3 pt-3 border-t border-gray-50 flex items-center gap-2">
+										<FeatherIcon name="calendar" class="w-3.5 h-3.5 text-blue-500" />
+										<span class="text-[13px] font-bold text-blue-700">{{ selectedEmp.leave_type || 'On Leave' }}</span>
+									</div>
+									<!-- Checked out info -->
+									<div v-if="selectedEmp._status === 'checked_out'" class="mt-3 pt-3 border-t border-gray-50 flex items-center gap-2">
+										<FeatherIcon name="log-out" class="w-3.5 h-3.5 text-purple-500" />
+										<span class="text-[13px] font-bold text-purple-700">Left at {{ formatTime(selectedEmp.check_out_time || selectedEmp.last_time) }}</span>
+										<span class="text-[13px] text-gray-800 ml-auto">{{ selectedEmp.working_hours?.toFixed(1) || '0' }}h worked</span>
+									</div>
+									<!-- Not arrived -->
+									<div v-if="selectedEmp._status === 'not_arrived'" class="mt-3 pt-3 border-t border-gray-50 flex items-center gap-2">
+										<FeatherIcon name="alert-triangle" class="w-3.5 h-3.5 text-red-500" />
+										<span class="text-[13px] font-bold text-red-600 italic">No check-in recorded today</span>
+									</div>
+									<!-- WFH info -->
+									<div v-if="selectedEmp._status === 'wfh'" class="mt-3 pt-3 border-t border-gray-50 flex items-center gap-2">
+										<FeatherIcon name="home" class="w-3.5 h-3.5 text-cyan-500" />
+										<span class="text-[13px] font-bold text-cyan-700">Working from home</span>
+										<span class="text-[13px] text-gray-800 ml-auto">Since {{ formatTime(selectedEmp.check_in_time) }}</span>
+									</div>
+									<!-- WFH office days compliance -->
+									<div v-if="selectedEmp.is_wfh && selectedEmp.wfh_office_days_required" class="mt-3 pt-3 border-t border-gray-50">
+										<div class="flex items-center gap-2 mb-1.5">
+											<FeatherIcon name="map-pin" class="w-3.5 h-3.5 text-gray-800" />
+											<span class="text-[13px] font-bold text-gray-800">Office Days This Month</span>
+										</div>
+										<div class="flex items-center gap-2">
+											<div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+												<div class="h-full rounded-full transition-all"
+													:class="selectedEmp.wfh_office_days_compliant ? 'bg-emerald-500' : 'bg-amber-500'"
+													:style="{ width: Math.min(100, (selectedEmp.wfh_office_days_actual / selectedEmp.wfh_office_days_required) * 100) + '%' }">
+												</div>
+											</div>
+											<span class="text-[13px] font-bold" :class="selectedEmp.wfh_office_days_compliant ? 'text-emerald-600' : 'text-amber-600'">
+												{{ selectedEmp.wfh_office_days_actual || 0 }}/{{ selectedEmp.wfh_office_days_required }}
+											</span>
+										</div>
+									</div>
+								</div>
+								<!-- Employee Info -->
+								<div class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+									<div class="flex items-center gap-2 mb-2.5">
+										<FeatherIcon name="user" class="w-4 h-4 text-gray-800" />
+										<span class="text-[14px] font-bold text-gray-900">Employee Info</span>
+									</div>
+									<div class="grid grid-cols-2 gap-2">
+										<div class="bg-gray-100 rounded-lg px-2.5 py-2">
+											<div class="text-[13px] text-gray-800 font-medium">Department</div>
+											<div class="text-[13px] font-semibold text-gray-900 mt-0.5 truncate">{{ selectedEmp.department || '-' }}</div>
+										</div>
+										<div class="bg-gray-100 rounded-lg px-2.5 py-2">
+											<div class="text-[13px] text-gray-800 font-medium">Designation</div>
+											<div class="text-[13px] font-semibold text-gray-900 mt-0.5 truncate">{{ selectedEmp.designation || '-' }}</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Deep Attendance Detail (loaded async) -->
+								<div v-if="empAttLoading" class="bg-white rounded-xl p-4 border-0.5 border-white/90 shadow-sm flex items-center justify-center gap-2">
+									<div class="w-4 h-4 border-2 border-gray-300 border-t-icd-600 rounded-full animate-spin"></div>
+									<span class="text-[13px] text-gray-800">Loading details...</span>
+								</div>
+								<template v-else-if="empAttDetail">
+									<!-- ===== CHECK-IN DETAILS ===== -->
+									<template v-if="empAttDetail.checkin">
+										<!-- Selfie Photo -->
+										<div v-if="empAttDetail.checkin.selfie_photo" class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="camera" class="w-4 h-4 text-gray-800" />
+												<span class="text-[14px] font-bold text-gray-900">Check-In Selfie</span>
+											</div>
+											<img :src="empAttDetail.checkin.selfie_photo" class="w-full rounded-lg max-h-40 object-cover" alt="Check-in selfie" />
+										</div>
+
+										<!-- Check-In Location Card -->
+										<div class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="map-pin" class="w-4 h-4 text-blue-600" />
+												<span class="text-[14px] font-bold text-gray-900">Check-In Location</span>
+												<span v-if="empAttDetail.checkin.is_within_geofence" class="ml-auto text-[11px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">IN ZONE</span>
+												<span v-else class="ml-auto text-[11px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">OUT OF ZONE</span>
+											</div>
+											<div class="grid grid-cols-2 gap-2">
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2 col-span-2" v-if="empAttDetail.checkin.location_name">
+													<div class="text-[12px] text-gray-900 font-medium">Location</div>
+													<div class="text-[13px] font-semibold text-gray-900 mt-0.5">{{ empAttDetail.checkin.location_name }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2" v-if="empAttDetail.checkin.distance_from_office != null">
+													<div class="text-[12px] text-gray-900 font-medium">Distance</div>
+													<div class="text-[13px] font-semibold mt-0.5" :class="empAttDetail.checkin.distance_from_office <= 100 ? 'text-emerald-600' : empAttDetail.checkin.distance_from_office <= 500 ? 'text-amber-600' : 'text-red-600'">{{ Math.round(empAttDetail.checkin.distance_from_office) }}m</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2" v-if="empAttDetail.checkin.latitude">
+													<div class="text-[12px] text-gray-900 font-medium">GPS</div>
+													<div class="text-[12px] font-mono text-gray-800 mt-0.5">{{ Number(empAttDetail.checkin.latitude).toFixed(4) }}, {{ Number(empAttDetail.checkin.longitude).toFixed(4) }}</div>
+												</div>
+											</div>
+										</div>
+
+										<!-- Check-In Verification Card -->
+										<div class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="shield" class="w-4 h-4 text-indigo-600" />
+												<span class="text-[14px] font-bold text-gray-900">Check-In Verification</span>
+											</div>
+											<div class="grid grid-cols-3 gap-2">
+												<div class="bg-gray-50 rounded-lg px-2 py-2 text-center">
+													<div class="text-[12px] text-gray-900 font-medium">WiFi</div>
+													<div class="text-[16px] mt-0.5" :class="empAttDetail.checkin.wifi_ssid ? (empAttDetail.checkin.wifi_matched ? 'text-emerald-500' : 'text-red-400') : 'text-gray-900'">{{ empAttDetail.checkin.wifi_ssid ? (empAttDetail.checkin.wifi_matched ? '&#10003;' : '&#10007;') : '&mdash;' }}</div>
+													<div class="text-[11px] font-semibold mt-0.5 truncate" :class="empAttDetail.checkin.wifi_ssid ? (empAttDetail.checkin.wifi_matched ? 'text-emerald-600' : 'text-red-500') : 'text-gray-900'">{{ empAttDetail.checkin.wifi_ssid || 'N/A' }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2 py-2 text-center">
+													<div class="text-[12px] text-gray-900 font-medium">Face</div>
+													<div class="text-[16px] mt-0.5" :class="empAttDetail.checkin.face_verified ? 'text-emerald-500' : 'text-red-400'">{{ empAttDetail.checkin.face_verified ? '&#10003;' : '&#10007;' }}</div>
+													<div class="text-[11px] font-semibold mt-0.5" :class="empAttDetail.checkin.face_verified ? 'text-emerald-600' : 'text-red-500'">{{ empAttDetail.checkin.face_confidence ? Math.round(empAttDetail.checkin.face_confidence) + '%' : '-' }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2 py-2 text-center">
+													<div class="text-[12px] text-gray-900 font-medium">Geofence</div>
+													<div class="text-[16px] mt-0.5" :class="empAttDetail.checkin.is_within_geofence ? 'text-emerald-500' : 'text-red-400'">{{ empAttDetail.checkin.is_within_geofence ? '&#10003;' : '&#10007;' }}</div>
+													<div class="text-[11px] font-semibold mt-0.5" :class="empAttDetail.checkin.is_within_geofence ? 'text-emerald-600' : 'text-red-500'">{{ empAttDetail.checkin.is_within_geofence ? 'Inside' : 'Outside' }}</div>
+												</div>
+											</div>
+										</div>
+									</template>
+
+									<!-- ===== CHECK-OUT DETAILS ===== -->
+									<template v-if="empAttDetail.checkout">
+										<!-- Check-Out Selfie -->
+										<div v-if="empAttDetail.checkout.selfie_photo" class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="camera" class="w-4 h-4 text-red-500" />
+												<span class="text-[14px] font-bold text-gray-900">Check-Out Selfie</span>
+											</div>
+											<img :src="empAttDetail.checkout.selfie_photo" class="w-full rounded-lg max-h-40 object-cover" alt="Check-out selfie" />
+										</div>
+
+										<!-- Check-Out Location -->
+										<div class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="map-pin" class="w-4 h-4 text-red-500" />
+												<span class="text-[14px] font-bold text-gray-900">Check-Out Location</span>
+												<span v-if="empAttDetail.checkout.is_within_geofence" class="ml-auto text-[11px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">IN ZONE</span>
+												<span v-else class="ml-auto text-[11px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">OUT OF ZONE</span>
+											</div>
+											<div class="grid grid-cols-2 gap-2">
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2 col-span-2" v-if="empAttDetail.checkout.location_name">
+													<div class="text-[12px] text-gray-900 font-medium">Location</div>
+													<div class="text-[13px] font-semibold text-gray-900 mt-0.5">{{ empAttDetail.checkout.location_name }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2" v-if="empAttDetail.checkout.distance_from_office != null">
+													<div class="text-[12px] text-gray-900 font-medium">Distance</div>
+													<div class="text-[13px] font-semibold mt-0.5" :class="empAttDetail.checkout.distance_from_office <= 100 ? 'text-emerald-600' : empAttDetail.checkout.distance_from_office <= 500 ? 'text-amber-600' : 'text-red-600'">{{ Math.round(empAttDetail.checkout.distance_from_office) }}m</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2" v-if="empAttDetail.checkout.latitude">
+													<div class="text-[12px] text-gray-900 font-medium">GPS</div>
+													<div class="text-[12px] font-mono text-gray-800 mt-0.5">{{ Number(empAttDetail.checkout.latitude).toFixed(4) }}, {{ Number(empAttDetail.checkout.longitude).toFixed(4) }}</div>
+												</div>
+											</div>
+										</div>
+
+										<!-- Check-Out Verification -->
+										<div class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="shield" class="w-4 h-4 text-red-500" />
+												<span class="text-[14px] font-bold text-gray-900">Check-Out Verification</span>
+											</div>
+											<div class="grid grid-cols-3 gap-2">
+												<div class="bg-gray-50 rounded-lg px-2 py-2 text-center">
+													<div class="text-[12px] text-gray-900 font-medium">WiFi</div>
+													<div class="text-[16px] mt-0.5" :class="empAttDetail.checkout.wifi_ssid ? (empAttDetail.checkout.wifi_matched ? 'text-emerald-500' : 'text-red-400') : 'text-gray-900'">{{ empAttDetail.checkout.wifi_ssid ? (empAttDetail.checkout.wifi_matched ? '&#10003;' : '&#10007;') : '&mdash;' }}</div>
+													<div class="text-[11px] font-semibold mt-0.5 truncate" :class="empAttDetail.checkout.wifi_ssid ? (empAttDetail.checkout.wifi_matched ? 'text-emerald-600' : 'text-red-500') : 'text-gray-900'">{{ empAttDetail.checkout.wifi_ssid || 'N/A' }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2 py-2 text-center">
+													<div class="text-[12px] text-gray-900 font-medium">Face</div>
+													<div class="text-[16px] mt-0.5" :class="empAttDetail.checkout.face_verified ? 'text-emerald-500' : 'text-red-400'">{{ empAttDetail.checkout.face_verified ? '&#10003;' : '&#10007;' }}</div>
+													<div class="text-[11px] font-semibold mt-0.5" :class="empAttDetail.checkout.face_verified ? 'text-emerald-600' : 'text-red-500'">{{ empAttDetail.checkout.face_confidence ? Math.round(empAttDetail.checkout.face_confidence) + '%' : '-' }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2 py-2 text-center">
+													<div class="text-[12px] text-gray-900 font-medium">Geofence</div>
+													<div class="text-[16px] mt-0.5" :class="empAttDetail.checkout.is_within_geofence ? 'text-emerald-500' : 'text-red-400'">{{ empAttDetail.checkout.is_within_geofence ? '&#10003;' : '&#10007;' }}</div>
+													<div class="text-[11px] font-semibold mt-0.5" :class="empAttDetail.checkout.is_within_geofence ? 'text-emerald-600' : 'text-red-500'">{{ empAttDetail.checkout.is_within_geofence ? 'Inside' : 'Outside' }}</div>
+												</div>
+											</div>
+										</div>
+									</template>
+
+									<!-- ===== DEVICE & ANTI-FRAUD ===== -->
+									<template v-if="empAttDetail.checkin || empAttDetail.checkout">
+										<!-- Device Card -->
+										<div class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm" v-if="(empAttDetail.checkin || empAttDetail.checkout).device_model">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="smartphone" class="w-4 h-4 text-gray-800" />
+												<span class="text-[14px] font-bold text-gray-900">Device</span>
+											</div>
+											<div class="grid grid-cols-2 gap-2">
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2">
+													<div class="text-[12px] text-gray-900 font-medium">Model</div>
+													<div class="text-[13px] font-semibold text-gray-900 mt-0.5 truncate">{{ (empAttDetail.checkin || empAttDetail.checkout).device_model }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2" v-if="(empAttDetail.checkin || empAttDetail.checkout).os_version">
+													<div class="text-[12px] text-gray-900 font-medium">OS</div>
+													<div class="text-[13px] font-semibold text-gray-900 mt-0.5 truncate">{{ (empAttDetail.checkin || empAttDetail.checkout).os_version }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2" v-if="(empAttDetail.checkin || empAttDetail.checkout).app_version">
+													<div class="text-[12px] text-gray-900 font-medium">App Ver</div>
+													<div class="text-[13px] font-semibold text-gray-900 mt-0.5">{{ (empAttDetail.checkin || empAttDetail.checkout).app_version }}</div>
+												</div>
+												<div class="bg-gray-50 rounded-lg px-2.5 py-2" v-if="(empAttDetail.checkin || empAttDetail.checkout).ip_address">
+													<div class="text-[12px] text-gray-900 font-medium">IP</div>
+													<div class="text-[12px] font-mono text-gray-800 mt-0.5">{{ (empAttDetail.checkin || empAttDetail.checkout).ip_address }}</div>
+												</div>
+											</div>
+										</div>
+
+										<!-- Anti-Fraud Card -->
+										<div class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm" v-if="hasAntiFraudAlerts">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="alert-triangle" class="w-4 h-4 text-red-500" />
+												<span class="text-[14px] font-bold text-red-600">Anti-Fraud Alerts</span>
+											</div>
+											<div class="flex flex-wrap gap-1.5">
+												<template v-for="log in [empAttDetail.checkin, empAttDetail.checkout].filter(Boolean)" :key="log.name">
+													<span class="text-[11px] font-bold bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded">{{ log.log_type === 'Check-in' ? 'IN' : 'OUT' }}</span>
+													<span v-if="log.fraud_score > 0" class="text-[12px] font-bold bg-red-50 text-red-700 px-2 py-1 rounded">Fraud: {{ log.fraud_score }}</span>
+													<span v-if="log.is_mock_location" class="text-[12px] font-bold bg-red-50 text-red-700 px-2 py-1 rounded">MOCK GPS</span>
+													<span v-if="log.is_vpn" class="text-[12px] font-bold bg-orange-50 text-orange-700 px-2 py-1 rounded">VPN</span>
+													<span v-if="log.is_developer_mode" class="text-[12px] font-bold bg-orange-50 text-orange-700 px-2 py-1 rounded">Dev Mode</span>
+												</template>
+											</div>
+										</div>
+
+										<!-- All Logs Timeline (only if more than 2 logs) -->
+										<div v-if="empAttDetail.all_logs?.length > 2" class="bg-white rounded-xl p-3.5 mb-2 border-0.5 border-white/90 shadow-sm">
+											<div class="flex items-center gap-2 mb-2.5">
+												<FeatherIcon name="list" class="w-4 h-4 text-gray-800" />
+												<span class="text-[14px] font-bold text-gray-900">All Logs ({{ empAttDetail.all_logs.length }})</span>
+											</div>
+											<div class="space-y-1.5">
+												<div v-for="log in empAttDetail.all_logs" :key="log.name" class="flex items-center gap-2 py-1 border-b border-gray-50 last:border-0">
+													<span class="text-[12px] font-bold px-1.5 py-0.5 rounded" :class="log.log_type === 'Check-in' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">{{ log.log_type === 'Check-in' ? 'IN' : 'OUT' }}</span>
+													<span class="text-[13px] font-semibold text-gray-900">{{ formatTime(log.timestamp) }}</span>
+													<span v-if="log.location_name" class="text-[11px] text-gray-800 truncate ml-auto">{{ log.location_name }}</span>
+												</div>
+											</div>
+										</div>
+									</template>
+								</template>
+							</div>
+						</div>
+					</div>
+				</Transition>
+			</Teleport>
+		</template>
+	</BaseLayout>
+</template>
+
+<script setup>
+import { ref, computed, inject, watch } from "vue"
+import { useRouter } from "vue-router"
+import { FeatherIcon, createResource, call, toast } from "frappe-ui"
+import BaseLayout from "@/components/BaseLayout.vue"
+import CircleScore from "@/components/CircleScore.vue"
+
+const __ = inject("$translate")
+const employee = inject("$employee")
+const dayjs = inject("$dayjs")
+const router = useRouter()
+
+function _errToast(e, fallback = "Operation failed") {
+	let msg = fallback
+	try {
+		if (e?.messages?.[0]) msg = JSON.parse(e.messages[0]).message || e.message || fallback
+		else if (e?.message) msg = e.message
+	} catch (_) {}
+	toast({ title: __(msg), icon: "alert-circle", position: "bottom-center", iconClasses: "text-red-500" })
+}
+
+const sheetOpen = ref(false)
+const activeCard = ref(null)
+const empDetailOpen = ref(false)
+const selectedEmp = ref(null)
+
+// Menu items - ONLY items NOT in bottom tabs
+const attendanceMenu = [
+	{ icon: 'eye', label: 'Attendance Overview', path: '/manager/attendance', bg: 'bg-emerald-50', fg: 'text-emerald-600' },
+	{ icon: 'check-square', label: 'Mark Attendance', path: '/manager/mark-attendance', bg: 'bg-blue-50', fg: 'text-blue-600' },
+	{ icon: 'calendar', label: 'Monthly Attendance', path: '/manager/monthly-attendance', bg: 'bg-amber-50', fg: 'text-amber-600' },
+	{ icon: 'file-text', label: 'Attendance Report', path: '/manager/attendance-report', bg: 'bg-green-50', fg: 'text-green-600' },
+]
+const leaveMenu = [
+	{ icon: 'pie-chart', label: 'Leave Balance', path: '/manager/leave-balance', bg: 'bg-purple-50', fg: 'text-purple-600' },
+	{ icon: 'plus-circle', label: 'Leave Allocation', path: '/manager/leave-allocation', bg: 'bg-indigo-50', fg: 'text-indigo-600' },
+	{ icon: 'clock', label: 'Shift Assignment', path: '/manager/shift-assignment', bg: 'bg-sky-50', fg: 'text-sky-600' },
+	{ icon: 'alert-circle', label: 'Late Excuses', path: '/manager/late-excuses', bg: 'bg-orange-50', fg: 'text-orange-600' },
+	{ icon: 'shield', label: 'Permissions', path: '/manager/permission-approvals', bg: 'bg-teal-50', fg: 'text-teal-600' },
+	{ icon: 'shield', label: 'Disciplinary', path: '/manager/disciplinary', bg: 'bg-rose-50', fg: 'text-rose-600' },
+]
+const payrollMenu = [
+	{ icon: 'dollar-sign', label: 'Salary Review', path: '/manager/salary', bg: 'bg-green-50', fg: 'text-green-600' },
+	{ icon: 'users', label: 'Employees', path: '/manager/salary/employees', bg: 'bg-blue-50', fg: 'text-blue-600' },
+	{ icon: 'trending-up', label: 'Earnings Review', path: '/manager/salary/earnings', bg: 'bg-emerald-50', fg: 'text-emerald-600' },
+	{ icon: 'trending-down', label: 'Deductions Review', path: '/manager/salary/deductions', bg: 'bg-red-50', fg: 'text-red-600' },
+	{ icon: 'settings', label: 'Payroll Actions', path: '/manager/salary/actions', bg: 'bg-gray-100', fg: 'text-gray-600' },
+]
+
+const teamProd = createResource({
+	url: "icd3s_attendance.icd3s_attendance.api.modules.productivity.get_team_productivity",
+	auto: true,
+	cache: "genius:team_productivity",
+})
+
+// Disciplinary Alert (manager review - all statuses)
+const mgrDaResource = createResource({
+	url: "icd3s_attendance.icd3s_attendance.api.attendance.get_disciplinary_summary",
+	auto: true,
+	cache: "genius:mgr_da_summary_v2",
+})
+const mgrDaSummary = computed(() => mgrDaResource.data || {})
+const mgrHasDA = computed(() => (mgrDaSummary.value.mgr_total_pending || 0) > 0)
+const mgrAlertShow = computed(() => {
+	const daTotal = mgrDaSummary.value.mgr_total_pending || 0
+	const pendTotal = dashboard.value.pending?.total || 0
+	return (daTotal + pendTotal) > 0
+})
+const mgrAlertItems = computed(() => {
+	const items = []
+	const s = mgrDaSummary.value
+	const p = dashboard.value.pending || {}
+	// Disciplinary (urgent - action needed)
+	if (s.mgr_pending_hr > 0) items.push({ n: s.mgr_pending_hr, label: "DA: HR Review", urgent: true })
+	if (s.mgr_appeals > 0) items.push({ n: s.mgr_appeals, label: "DA: Appeals", urgent: true })
+	if (s.mgr_pending_ceo > 0) items.push({ n: s.mgr_pending_ceo, label: "DA: CEO", urgent: true })
+	// Regular approvals (all 9 types)
+	if (p.leaves > 0) items.push({ n: p.leaves, label: "Leaves" })
+	if (p.corrections > 0) items.push({ n: p.corrections, label: "Corrections" })
+	if (p.excuses > 0) items.push({ n: p.excuses, label: "Excuses" })
+	if (p.expenses > 0) items.push({ n: p.expenses, label: "Expenses" })
+	if (p.swaps > 0) items.push({ n: p.swaps, label: "Swaps" })
+	if (p.attendance > 0) items.push({ n: p.attendance, label: "Attendance" })
+	if (p.meals > 0) items.push({ n: p.meals, label: "Meals" })
+	if (p.work_requests > 0) items.push({ n: p.work_requests, label: "WFH/Mission" })
+	if (p.advances > 0) items.push({ n: p.advances, label: "Advances" })
+	if (p.devices > 0) items.push({ n: p.devices, label: "Devices" })
+	// Disciplinary (informational)
+	if (s.mgr_under_investigation > 0) items.push({ n: s.mgr_under_investigation, label: "DA: Investigation" })
+	if (s.mgr_pending_defense > 0) items.push({ n: s.mgr_pending_defense, label: "DA: Defense" })
+	return items
+})
+
+const dashboardResource = createResource({
+	url: "icd3s_attendance.icd3s_attendance.api.attendance.get_manager_dashboard_summary",
+})
+const dashboard = computed(() => dashboardResource.data || { total_employees: 0, cards: [], stats: {}, pending: {}, is_weekend: false })
+const visibleCards = computed(() => dashboard.value.cards || [])
+const totalCheckedIn = computed(() => dashboard.value.stats?.total_checked_in || 0)
+const allManagerCards = computed(() => {
+	const cards = [...(visibleCards.value || [])]
+	if (cards.length < 6) {
+		cards.push({ key: 'total', label: 'Total', count: dashboard.value.total_employees || 0, employees: [] })
+	}
+	return cards.slice(0, 6)
+})
+const attendanceRate = computed(() => Math.round(dashboard.value.stats?.attendance_rate || 0))
+const punctualityRate = computed(() => Math.round(dashboard.value.stats?.punctuality_rate || 0))
+// pendingCount removed - merged into unified alert
+const onTimeCount = computed(() => getCardByKey('present')?.count || 0)
+const lateCount = computed(() => getCardByKey('late')?.count || 0)
+const shiftInfo = computed(() => {
+	const s = dashboard.value.shift_start
+	const e = dashboard.value.shift_end
+	if (!s && !e) return null
+	const fmt = (t) => {
+		if (!t) return ''
+		const parts = String(t).split(':')
+		if (parts.length < 2) return t
+		let h = parseInt(parts[0]), m = parts[1]
+		const ampm = h >= 12 ? 'PM' : 'AM'
+		h = h % 12 || 12
+		return h + ':' + m + ampm
+	}
+	return fmt(s) + ' - ' + fmt(e)
+})
+
+function getCardByKey(key) { return visibleCards.value.find(c => c.key === key) }
+function goTo(path) { router.push(path) }
+
+const puncColor = computed(() => punctualityRate.value >= 80 ? 'text-emerald-600' : punctualityRate.value >= 50 ? 'text-amber-600' : 'text-red-500')
+const puncBarCls = computed(() => punctualityRate.value >= 80 ? 'bg-emerald-500' : punctualityRate.value >= 50 ? 'bg-amber-500' : 'bg-red-500')
+
+function mgrCardBg(key) {
+	return { present: 'mgr-card-present', late: 'mgr-card-late', wfh: 'mgr-card-wfh', checked_out: 'mgr-card-out', not_arrived: 'mgr-card-absent', on_leave: 'mgr-card-leave', total: 'mgr-card-total' }[key] || ''
+}
+
+const allEmployees = computed(() => {
+	const all = []
+	for (const card of visibleCards.value) {
+		for (const emp of card.employees || []) all.push({ ...emp, _status: card.key })
+	}
+	return all.sort((a, b) => (a.employee_name || '').localeCompare(b.employee_name || ''))
+})
+
+const teamGroups = computed(() => {
+	const empByStatus = {}
+	for (const emp of allEmployees.value) {
+		if (!empByStatus[emp._status]) empByStatus[emp._status] = []
+		empByStatus[emp._status].push(emp)
+	}
+	return [
+		{ key: 'present', label: 'On Time', employees: empByStatus.present || [], dot: 'bg-emerald-500', txt: 'text-emerald-700', av: '#10b981', detailCls: 'text-emerald-600', detailFn: (e) => formatTime(e.check_in_time) },
+		{ key: 'late', label: 'Late', employees: empByStatus.late || [], dot: 'bg-amber-500', txt: 'text-amber-700', av: '#f59e0b', detailCls: 'text-amber-600', detailFn: (e) => formatLateTime(e.late_minutes) },
+		{ key: 'wfh', label: 'Work From Home', employees: empByStatus.wfh || [], dot: 'bg-cyan-500', txt: 'text-cyan-700', av: '#06b6d4', bar: 'bg-cyan-500', detailCls: 'text-cyan-600', detailFn: (e) => formatTime(e.check_in_time) },
+		{ key: 'checked_out', label: 'Checked Out', employees: empByStatus.checked_out || [], dot: 'bg-gray-400', txt: 'text-gray-600', av: '#9ca3af', detailCls: 'text-gray-700', detailFn: (e) => (e.working_hours?.toFixed(1) || '0') + 'h' },
+		{ key: 'not_arrived', label: 'Not Arrived', employees: empByStatus.not_arrived || [], dot: 'bg-red-500', txt: 'text-red-700', av: '#ef4444', detailCls: 'text-red-500', detailFn: () => '--:--' },
+		{ key: 'on_leave', label: 'On Leave', employees: empByStatus.on_leave || [], dot: 'bg-blue-500', txt: 'text-blue-700', av: '#3b82f6', detailCls: 'text-blue-600', detailFn: (e) => e.leave_type || 'Leave' },
+	]
+})
+
+const departments = computed(() => {
+	const map = {}
+	for (const emp of allEmployees.value) {
+		const dept = emp.department || 'Unknown'
+		if (!map[dept]) map[dept] = { name: dept, total: 0, present: 0 }
+		map[dept].total++
+		if (['present', 'late', 'checked_out', 'wfh'].includes(emp._status)) map[dept].present++
+	}
+	return Object.values(map).map(d => ({
+		...d,
+		shortName: d.name.replace(/ - I$/, '').replace(/Department/i, '').trim(),
+		rate: d.total > 0 ? Math.round(d.present / d.total * 100) : 0,
+	})).sort((a, b) => b.rate - a.rate)
+})
+
+// pendingItems removed - merged into unified alert
+
+function cardIcon(key) {
+	return { present: 'check-circle', late: 'clock', wfh: 'home', checked_out: 'log-out', not_arrived: 'alert-triangle', on_leave: 'calendar', total: 'users' }[key] || 'circle'
+}
+function formatTime(ts) {
+	if (!ts) return '--:--'
+	const d = dayjs(ts)
+	return d.isValid() ? d.format('h:mm A') : '--:--'
+}
+function formatLateTime(minutes) {
+	if (!minutes && minutes !== 0) return '--'
+	const m = parseInt(minutes)
+	if (m >= 60) {
+		const h = Math.floor(m / 60)
+		const rm = m % 60
+		return rm > 0 ? h + 'h ' + rm + 'm' : h + 'h'
+	}
+	return m + ' min'
+}
+function compactLate(minutes) {
+	if (!minutes) return 'L'
+	const m = parseInt(minutes)
+	if (m >= 60) {
+		const h = Math.floor(m / 60)
+		const rm = m % 60
+		return rm > 0 ? 'L' + h + 'H' + rm + 'M' : 'L' + h + 'H'
+	}
+	return 'L' + m + 'M'
+}
+function openSheet(card) {
+	if (!card || card.count === 0) return
+	activeCard.value = card
+	sheetOpen.value = true
+}
+
+// ===== Individual Employee Detail =====
+const empAttDetail = ref(null)
+const empAttLoading = ref(false)
+const hasAntiFraudAlerts = computed(() => {
+	if (!empAttDetail.value) return false
+	const logs = [empAttDetail.value.checkin, empAttDetail.value.checkout].filter(Boolean)
+	return logs.some(l => l.fraud_score > 0 || l.is_mock_location || l.is_vpn || l.is_developer_mode)
+})
+
+async function openEmpDetail(emp) {
+	selectedEmp.value = emp
+	empAttDetail.value = null
+	empDetailOpen.value = true
+	// Fetch deep attendance data
+	empAttLoading.value = true
+	try {
+		const data = await call("icd3s_attendance.icd3s_attendance.api.attendance.get_employee_attendance_detail", {
+			employee: emp.employee,
+			date: dayjs().format("YYYY-MM-DD"),
+		})
+		empAttDetail.value = data
+	} catch (e) {
+		// Silent fail - basic info still shows
+	} finally {
+		empAttLoading.value = false
+	}
+}
+
+const STATUS_MAP = {
+	present:     { color: '#10b981', bar: 'bg-emerald-500', dot: 'bg-emerald-500', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700' },
+	late:        { color: '#f59e0b', bar: 'bg-amber-500',   dot: 'bg-amber-500',   text: 'text-amber-700',   badge: 'bg-amber-100 text-amber-700' },
+	wfh:         { color: '#06b6d4', bar: 'bg-cyan-500',    dot: 'bg-cyan-500',    text: 'text-cyan-700',    badge: 'bg-cyan-100 text-cyan-700' },
+	checked_out: { color: '#8b5cf6', bar: 'bg-purple-400',  dot: 'bg-purple-400',  text: 'text-purple-600',  badge: 'bg-purple-100 text-purple-700' },
+	not_arrived: { color: '#ef4444', bar: 'bg-red-500',     dot: 'bg-red-500',     text: 'text-red-600',     badge: 'bg-red-100 text-red-700' },
+	on_leave:    { color: '#3b82f6', bar: 'bg-blue-500',    dot: 'bg-blue-500',    text: 'text-blue-700',    badge: 'bg-blue-100 text-blue-700' },
+}
+const FALLBACK = { color: '#9ca3af', bar: 'bg-gray-300', dot: 'bg-gray-300', text: 'text-gray-600', badge: 'bg-gray-100 text-gray-700' }
+
+function empColor(s)    { return (STATUS_MAP[s] || FALLBACK).color }
+function empBarCls(s)   { return (STATUS_MAP[s] || FALLBACK).bar }
+function empDotCls(s)   { return (STATUS_MAP[s] || FALLBACK).dot }
+function empLabelCls(s) { return (STATUS_MAP[s] || FALLBACK).text }
+function empBadgeCls(s) { return (STATUS_MAP[s] || FALLBACK).badge }
+
+function empLabel(emp) {
+	const s = emp._status
+	if (s === 'present') return 'On Time'
+	if (s === 'late') return 'Late'
+	if (s === 'wfh') return 'WFH'
+	if (s === 'checked_out') return 'Left'
+	if (s === 'not_arrived') return 'Absent'
+	if (s === 'on_leave') return emp.leave_type?.split(' ')[0] || 'Leave'
+	return 'N/A'
+}
+
+function empDetailVal(emp) {
+	const s = emp._status
+	if (s === 'present') return formatTime(emp.check_in_time)
+	if (s === 'late') return formatTime(emp.check_in_time)
+	if (s === 'wfh') return formatTime(emp.check_in_time)
+	if (s === 'checked_out') return (emp.working_hours?.toFixed(1) || '0') + 'h'
+	if (s === 'not_arrived') return '--:--'
+	if (s === 'on_leave') return emp.leave_type || 'Leave'
+	return ''
+}
+
+async function loadDashboard() {
+	try { await dashboardResource.submit() } catch (e) { _errToast(e, "Failed to load dashboard") }
+}
+watch(() => employee.data?.company, (c) => { if (c) loadDashboard() }, { immediate: true })
+</script>
+
+<style scoped>
+/* ===== HERO ===== */
+.hero {
+	border-radius: 0.75rem;
+	box-shadow: 0 4px 20px -2px rgba(5, 100, 50, 0.3), 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.hero-gradient {
+	background: linear-gradient(135deg, #064e3b 0%, #047857 40%, #10b981 70%, #6ee7b7 100%);
+}
+/* Stat cards: glass, compact */
+.stat-card {
+	border-radius: 0.75rem;
+	padding: 0.35rem 0.5rem;
+	border: 1px solid rgba(255,255,255,0.3);
+	box-shadow: 0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.2);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 2px;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.card-row {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	position: relative;
+	min-height: 26px;
+}
+.card-icon {
+	width: 18px;
+	height: 18px;
+	color: white;
+	flex-shrink: 0;
+	position: absolute;
+	left: 0;
+}
+.card-num {
+	font-size: 24px;
+	font-weight: 900;
+	color: white;
+	line-height: 1;
+	width: 100%;
+	text-align: center;
+}
+.card-label {
+	font-size: 11px;
+	font-weight: 700;
+	color: white;
+	white-space: nowrap;
+	text-align: center;
+	width: 100%;
+}
+.mgr-card-present { background: linear-gradient(135deg, rgba(16,185,129,0.7) 0%, rgba(5,150,105,0.55) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.mgr-card-late { background: linear-gradient(135deg, rgba(245,158,11,0.7) 0%, rgba(217,119,6,0.55) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.mgr-card-out { background: linear-gradient(135deg, rgba(139,92,246,0.7) 0%, rgba(109,40,217,0.55) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.mgr-card-absent { background: linear-gradient(135deg, rgba(244,63,94,0.7) 0%, rgba(225,29,72,0.55) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.mgr-card-wfh { background: linear-gradient(135deg, rgba(6,182,212,0.7) 0%, rgba(8,145,178,0.55) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.mgr-card-leave { background: linear-gradient(135deg, rgba(59,130,246,0.7) 0%, rgba(37,99,235,0.55) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.mgr-card-total { background: linear-gradient(135deg, rgba(100,116,139,0.7) 0%, rgba(71,85,105,0.55) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+
+/* ===== BARS ===== */
+.bar-track { width: 100%; height: 6px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden; }
+.bar-track--sm { height: 4px; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+
+/* ===== BOTTOM SHEET ===== */
+.sheet-overlay {
+	position: fixed; inset: 0; z-index: 99999;
+	background: rgba(0, 0, 0, 0.3);
+	-webkit-backdrop-filter: blur(24px) saturate(200%);
+	backdrop-filter: blur(24px) saturate(200%);
+	display: flex; align-items: stretch; justify-content: center;
+}
+.sheet-panel {
+	width: 100%; max-width: 500px;
+	background: rgba(242, 242, 247, 0.95);
+	-webkit-backdrop-filter: blur(60px) saturate(200%);
+	backdrop-filter: blur(60px) saturate(200%);
+	display: flex; flex-direction: column;
+	overflow: hidden;
+	padding-top: env(safe-area-inset-top, 0);
+}
+.sheet-hdr {
+	display: flex; align-items: center; gap: 12px;
+	padding: 14px 16px; margin: 4px 12px 0; border-radius: 14px;
+	box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+.sheet-body {
+	overflow-y: auto; flex: 1;
+	padding: 10px 12px 24px;
+	-webkit-overflow-scrolling: touch;
+}
+.sheet-emp {
+	display: flex; align-items: center; gap: 12px;
+	padding: 12px 14px; margin-bottom: 4px;
+	background: rgba(255, 255, 255, 0.8);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+	border-radius: 13px;
+	border: 0.5px solid rgba(255,255,255,0.9);
+	box-shadow: 0 0.5px 2px rgba(0,0,0,0.04);
+}
+
+/* ===== EMPLOYEE MINI CARDS ===== */
+.late-circle {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 22px; height: 22px; border-radius: 9999px;
+	font-size: 9px; font-weight: 900;
+	color: #fff; background: #ef4444; line-height: 1; flex-shrink: 0;
+}
+.ot-circle {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 22px; height: 22px; border-radius: 9999px;
+	font-size: 9px; font-weight: 900;
+	color: #fff; background: #16a34a; line-height: 1; flex-shrink: 0;
+}
+.emp-mini {
+	position: relative;
+	background: rgba(255, 255, 255, 0.85);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+	border-radius: 10px;
+	padding: 8px 8px 7px;
+	border: 0.5px solid rgba(255,255,255,0.9);
+	box-shadow: 0 0.5px 2px rgba(0,0,0,0.04);
+	overflow: hidden;
+	text-align: left;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* ===== ANIMATIONS ===== */
+.sheet-enter-active { transition: all 0.35s cubic-bezier(0.32, 0.72, 0, 1); }
+.sheet-leave-active { transition: all 0.22s cubic-bezier(0.32, 0.72, 0, 1); }
+.sheet-enter-from .sheet-panel, .sheet-leave-to .sheet-panel { transform: translateY(100%); }
+.sheet-enter-from, .sheet-leave-to { opacity: 0; }
+
+/* ===== MANAGER DISCIPLINARY ALERT ===== */
+.mgr-da-wrap {
+	max-height: 0;
+	opacity: 0;
+	overflow: hidden;
+	transition: max-height 0.35s ease, opacity 0.25s ease 0.1s;
+	pointer-events: none;
+}
+.mgr-da-wrap.mgr-da-show {
+	max-height: 120px;
+	opacity: 1;
+	pointer-events: auto;
+}
+.mgr-da-alert {
+	box-shadow: 0 4px 20px -2px rgba(220, 38, 38, 0.3), 0 1px 4px rgba(0, 0, 0, 0.06);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.mgr-da-alert:active { transform: scale(0.98); }
+.mgr-da-grad { background: linear-gradient(135deg, #991b1b 0%, #dc2626 40%, #ef4444 70%, #f87171 100%); }
+.mgr-da-grad-amber { background: linear-gradient(135deg, #92400e 0%, #d97706 40%, #f59e0b 70%, #fbbf24 100%); }
+</style>

@@ -1,12 +1,12 @@
 <template>
 	<ListItem>
 		<template #left>
-			<SalaryIcon class="h-5 w-5 text-gray-500" />
+			<SalaryIcon class="h-5 w-5 text-gray-700" />
 			<div class="flex flex-col items-start gap-1.5">
 				<div class="text-base font-normal text-gray-800">
 					{{ title }}
 				</div>
-				<div v-if="doc?.gross_pay" class="text-xs font-normal text-gray-500">
+				<div v-if="doc?.gross_pay" class="text-xs font-normal text-gray-700">
 					<span>
 						{{
 							__("{0}: {1}", [
@@ -23,7 +23,7 @@
 			<span v-if="doc?.net_pay" class="text-gray-700 font-normal rounded text-base">
 				{{ formatCurrency(doc.net_pay, doc.currency) }}
 			</span>
-			<FeatherIcon name="chevron-right" class="h-5 w-5 text-gray-500" />
+			<FeatherIcon name="chevron-right" class="h-5 w-5 text-gray-700" />
 		</template>
 	</ListItem>
 </template>
@@ -48,12 +48,12 @@ const props = defineProps({
 const title = computed(() => {
 	if (dayjs(props.doc.start_date).isSame(props.doc.end_date, "month")) {
 		// monthly salary
-		return dayjs(props.doc.start_date).format("MMM YYYY")
+		return dayjs(props.doc.start_date).format("MMMM YYYY")
 	} else {
 		// quarterly, bimonthly, etc
-		return `${dayjs(props.doc.start_date).format("MMM YYYY")} - ${dayjs(
+		return `${dayjs(props.doc.start_date).format("MMMM YYYY")} - ${dayjs(
 			props.doc.end_date
-		).format("MMM YYYY")}`
+		).format("MMMM YYYY")}`
 	}
 })
 </script>

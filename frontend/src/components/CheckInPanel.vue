@@ -1,11 +1,11 @@
 <template>
-	<div class="flex flex-col bg-white rounded w-full py-6 px-4 border-none">
+	<div class="flex flex-col card-premium w-full py-6 px-4 border-none">
 		<h2 class="text-lg font-bold text-gray-900">
 			{{ __("Hey, {0} 👋", [employee?.data?.first_name]) }}
 		</h2>
 
 		<template v-if="settings.data?.allow_employee_checkin_from_mobile_app">
-			<div class="font-medium text-sm text-gray-500 mt-1.5" v-if="lastLog">
+			<div class="font-medium text-sm text-gray-700 mt-1.5" v-if="lastLog">
 				<span>{{ __("Last {0} was at {1}", [__(lastLogType), formatTimestamp(lastLog.time)]) }}</span>
 				<span class="whitespace-pre"> &middot; </span>
 				<router-link :to="{ name: 'EmployeeCheckinListView' }" v-slot="{ navigate }">
@@ -27,8 +27,8 @@
 			</Button>
 		</template>
 
-		<div v-else class="font-medium text-sm text-gray-500 mt-1.5">
-			{{ dayjs().format("ddd, D MMMM, YYYY") }}
+		<div v-else class="font-medium text-sm text-gray-700 mt-1.5">
+			{{ dayjs().format("ddd, DD-MM-YYYY") }}
 		</div>
 	</div>
 
@@ -44,13 +44,13 @@
 				<div class="font-bold text-xl">
 					{{ dayjs(checkinTimestamp).format("hh:mm:ss a") }}
 				</div>
-				<div class="font-medium text-gray-500 text-sm">
-					{{ dayjs().format("D MMM, YYYY") }}
+				<div class="font-medium text-gray-700 text-sm">
+					{{ dayjs().format("DD-MM-YYYY") }}
 				</div>
 			</div>
 
 			<template v-if="settings.data?.allow_geolocation_tracking">
-				<span v-if="locationStatus" class="font-medium text-gray-500 text-sm">
+				<span v-if="locationStatus" class="font-medium text-gray-700 text-sm">
 					{{ locationStatus }}
 				</span>
 

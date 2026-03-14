@@ -38,7 +38,7 @@ export const formatTimestamp = (timestamp) => {
 	if (dayjs(timestamp).isToday()) return formattedTime
 	else if (dayjs(timestamp).isYesterday()) return `${formattedTime} yesterday`
 	else if (dayjs(timestamp).isSame(dayjs(), "year"))
-		return `${formattedTime} on ${dayjs(timestamp).format("D MMM")}`
+		return `${formattedTime} on ${dayjs(timestamp).format("DD-MM-YYYY")}`
 
-	return `${formattedTime} on ${dayjs(timestamp).format("D MMM, YYYY")}`
+	return `${formattedTime} on ${dayjs(timestamp).format("DD-MM-YYYY")}`
 }

@@ -16,7 +16,7 @@
 							<div class="text-base font-normal text-gray-800">
 								{{ __(item.expense_type) }}
 							</div>
-							<div class="text-xs font-normal text-gray-500">
+							<div class="text-xs font-normal text-gray-700">
 								<span>
 									{{
 										__("{0}: {1}", [
@@ -27,7 +27,7 @@
 								</span>
 								<span class="whitespace-pre"> &middot; </span>
 								<span class="whitespace-nowrap" v-if="item.expense_date">
-									{{ dayjs(item.expense_date).format("D MMM") }}
+									{{ dayjs(item.expense_date).format("DD-MM") }}
 								</span>
 							</div>
 						</div>

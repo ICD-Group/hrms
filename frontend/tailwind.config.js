@@ -9,6 +9,20 @@ export default {
 	],
 	theme: {
 		extend: {
+			colors: {
+				icd: {
+					50: '#f8f0fc',
+					100: '#ede0f5',
+					200: '#d9bfe9',
+					300: '#c49ddd',
+					400: '#a86cc9',
+					500: '#7B2FA0',
+					600: '#4D067B',
+					700: '#3D0562',
+					800: '#2E044A',
+					900: '#1F0331',
+				},
+			},
 			screens: {
 				standalone: {
 					raw: "(display-mode: standalone)",

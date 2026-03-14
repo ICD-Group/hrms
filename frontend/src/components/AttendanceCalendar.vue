@@ -31,8 +31,12 @@
 				<div v-for="_ in firstOfMonth.get('d')" />
 				<div v-for="index in firstOfMonth.endOf('M').get('D')">
 					<div
-						class="h-8 w-8 flex rounded-full mx-auto"
-						:class="getEventOnDate(index) && colorMap[getEventOnDate(index)]"
+						@click="onDayClick(index)"
+						class="h-8 w-8 flex rounded-full mx-auto cursor-pointer active:scale-90 transition-transform"
+						:class="[
+							getEventOnDate(index) && colorMap[getEventOnDate(index)],
+							selectedDate === getDateString(index) ? 'ring-2 ring-icd-500 ring-offset-1' : ''
+						]"
 					>
 						<span class="text-gray-800 text-sm font-medium m-auto">
 							{{ index }}
@@ -55,24 +59,57 @@
 					</span>
 				</div>
 			</div>
+			<!-- View Full History Link -->
+			<div class="flex justify-center">
+				<button @click="goToHistory" class="text-sm font-medium text-gray-500 active:text-gray-700 flex items-center gap-1">
+					{{ __("View Full History") }}
+					<span class="text-xs">&#x2192;</span>
+				</button>
+			</div>
 		</div>
+
+		<!-- Day Detail Bottom Sheet (teleported to body to escape ion-content containment) -->
+		<DayDetailSheet
+			:show="selectedDate !== null"
+			:date="selectedDate"
+			:status="selectedDate ? calendarEvents.data?.[selectedDate] : null"
+			@close="selectedDate = null"
+		/>
 	</div>
 </template>
 
 <script setup>
 import { computed, inject, ref, watch } from "vue"
 import { createResource } from "frappe-ui"
+import { useRouter } from "vue-router"
+import DayDetailSheet from "./DayDetailSheet.vue"
 
+const router = useRouter()
 const dayjs = inject("$dayjs")
+const employee = inject("$employee")
 const __ = inject("$translate")
 const firstOfMonth = ref(dayjs().date(1).startOf("D"))
+const selectedDate = ref(null)
+
+function goToHistory() {
+	router.push({ name: "GeniusMyHistory" })
+}
+
+function getDateString(index) {
+	return firstOfMonth.value.date(index).format("YYYY-MM-DD")
+}
+
+function onDayClick(index) {
+	const dateStr = getDateString(index)
+	selectedDate.value = selectedDate.value === dateStr ? null : dateStr
+}
 
 const colorMap = {
 	Present: "bg-green-300",
 	"Work From Home": "bg-green-300",
 	"Half Day": "bg-yellow-200",
 	Absent: "bg-red-200",
-	"On Leave": "bg-blue-300",
+	"On Leave": "bg-icd-300",
 	Holiday: "bg-gray-300",
 }
 
@@ -97,6 +134,7 @@ const summary = computed(() => {
 watch(
 	() => firstOfMonth.value,
 	() => {
+		selectedDate.value = null
 		calendarEvents.fetch()
 	}
 )
@@ -121,9 +159,9 @@ const DAYS = [
 const calendarEvents = createResource({
 	url: "hrms.api.get_attendance_calendar_events",
 	auto: true,
-	cache: "hrms:attendance_calendar_events",
 	makeParams() {
 		return {
+			employee: employee.data.name,
 			from_date: firstOfMonth.value.format("YYYY-MM-DD"),
 			to_date: firstOfMonth.value.endOf("M").format("YYYY-MM-DD"),
 		}

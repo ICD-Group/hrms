@@ -1,14 +1,14 @@
 <template>
 	<ion-header class="ion-no-border">
-		<div class="w-full sm:w-96">
+		<div class="w-full">
 			<div
-				class="flex flex-row bg-white shadow-sm py-4 px-3 items-center justify-between border-b"
+				class="flex flex-row glass-header px-4 py-2.5 items-center justify-between"
 			>
 				<div class="flex flex-row items-center">
-					<Button variant="ghost" class="!px-1 mr-1 hover:bg-white" @click="router.back()">
+					<Button variant="ghost" class="!px-1 mr-1 hover:bg-white/50" @click="router.back()">
 						<FeatherIcon name="chevron-left" class="h-5 w-5" />
 					</Button>
-					<h2 class="text-xl font-semibold text-gray-900">{{ pageTitle }}</h2>
+					<h2 class="text-lg font-bold text-gray-900">{{ pageTitle }}</h2>
 				</div>
 
 				<div class="flex flex-row gap-2">
@@ -18,12 +18,12 @@
 						variant="subtle"
 						:class="[
 							areFiltersApplied
-								? '!border !border-gray-800 !bg-white !text-gray-900 !font-semibold'
+								? '!border !border-icd-600 !bg-icd-50 !text-icd-600 !font-semibold'
 								: '',
 						]"
 					/>
 					<router-link
-						v-if="createPermission?.data?.has_permission && props.doctype != 'Employee Checkin'"
+						v-if="createPermission?.data?.has_permission && hasFormView"
 						:to="{ name: formViewRoute }"
 						v-slot="{ navigate }"
 					>
@@ -45,7 +45,7 @@
 		</ion-refresher>
 
 		<div
-			class="flex flex-col items-center mb-7 p-4 h-full w-full sm:w-96 overflow-y-auto"
+			class="flex flex-col items-center mb-7 p-4 h-full w-full overflow-y-auto"
 			ref="scrollContainer"
 			@scroll="() => handleScroll()"
 		>
@@ -58,7 +58,7 @@
 				/>
 
 				<div
-					class="flex flex-col bg-white rounded mt-5"
+					class="flex flex-col glass-section rounded mt-5"
 					v-if="!documents.loading && documents.data?.length"
 				>
 					<div
@@ -94,10 +94,8 @@
 					v-else-if="!documents.loading"
 				/>
 
-				<!-- Loading Indicator -->
-				<div v-if="documents.loading" class="flex mt-2 items-center justify-center">
-					<LoadingIndicator class="w-8 h-8 text-gray-800" />
-				</div>
+				<!-- Loading Skeleton -->
+				<ListSkeleton v-if="documents.loading" :rows="5" />
 			</div>
 		</div>
 
@@ -141,8 +139,9 @@ import {
 	IonRefresherContent,
 } from "@ionic/vue"
 
-import { FeatherIcon, createResource, LoadingIndicator, debounce } from "frappe-ui"
+import { FeatherIcon, createResource, debounce } from "frappe-ui"
 
+import ListSkeleton from "@/components/ListSkeleton.vue"
 import TabButtons from "@/components/TabButtons.vue"
 import EmployeeCheckinItem from "@/components/EmployeeCheckinItem.vue"
 import AttendanceRequestItem from "@/components/AttendanceRequestItem.vue"
@@ -151,6 +150,8 @@ import ShiftAssignmentItem from "@/components/ShiftAssignmentItem.vue"
 import LeaveRequestItem from "@/components/LeaveRequestItem.vue"
 import ExpenseClaimItem from "@/components/ExpenseClaimItem.vue"
 import EmployeeAdvanceItem from "@/components/EmployeeAdvanceItem.vue"
+import AppraisalItem from "@/components/AppraisalItem.vue"
+import GenericListItem from "@/components/GenericListItem.vue"
 import ListFiltersActionSheet from "@/components/ListFiltersActionSheet.vue"
 import CustomIonModal from "@/components/CustomIonModal.vue"
 import RequestActionSheet from "@/components/RequestActionSheet.vue"
@@ -185,10 +186,15 @@ const props = defineProps({
 		type: String,
 		required: true,
 	},
+	employeeFieldName: {
+		type: String,
+		default: "employee",
+	},
 })
 
 const getButtonKey = (tab) => tab?.key ?? tab
 
+const _genericItem = markRaw(GenericListItem)
 const listItemComponent = {
 	"Employee Checkin": markRaw(EmployeeCheckinItem),
 	"Attendance Request": markRaw(AttendanceRequestItem),
@@ -197,6 +203,14 @@ const listItemComponent = {
 	"Leave Application": markRaw(LeaveRequestItem),
 	"Expense Claim": markRaw(ExpenseClaimItem),
 	"Employee Advance": markRaw(EmployeeAdvanceItem),
+	"Appraisal": markRaw(AppraisalItem),
+	"Training Event": _genericItem,
+	"Employee Grievance": _genericItem,
+	"Travel Request": _genericItem,
+	"Employee Skill Map": _genericItem,
+	"Employee Tax Exemption Declaration": _genericItem,
+	"Employee Benefit Application": _genericItem,
+	"Loan Application": _genericItem,
 }
 
 const router = useRouter()
@@ -227,21 +241,32 @@ const isTeamRequest = computed(() => {
 	return props.tabButtons && activeTab.value === getButtonKey(props.tabButtons[1])
 })
 
+const ROUTE_PREFIXES = {
+	"Employee Grievance": "Grievance",
+	"Employee Tax Exemption Declaration": "TaxDeclaration",
+	"Employee Benefit Application": "BenefitApplication",
+}
 const formViewRoute = computed(() => {
-	return `${props.doctype.replace(/\s+/g, "")}FormView`
+	const prefix = ROUTE_PREFIXES[props.doctype] || props.doctype.replace(/\s+/g, "")
+	return `${prefix}FormView`
 })
 
 const detailViewRoute = computed(() => {
-	return `${props.doctype.replace(/\s+/g, "")}DetailView`
+	const prefix = ROUTE_PREFIXES[props.doctype] || props.doctype.replace(/\s+/g, "")
+	return `${prefix}DetailView`
 })
+
+const hasFormView = computed(() => router.hasRoute(formViewRoute.value))
 
 const defaultFilters = computed(() => {
 	const filters = []
 
-	if (isTeamRequest.value) {
-		filters.push([props.doctype, "employee", "!=", employee.data.name])
-	} else {
-		filters.push([props.doctype, "employee", "=", employee.data.name])
+	if (props.employeeFieldName) {
+		if (isTeamRequest.value) {
+			filters.push([props.doctype, props.employeeFieldName, "!=", employee.data.name])
+		} else {
+			filters.push([props.doctype, props.employeeFieldName, "=", employee.data.name])
+		}
 	}
 
 	return filters
@@ -284,7 +309,7 @@ const documents = createResource({
 
 const createPermission = createResource({
 	url: "frappe.client.has_permission",
-	params: { doctype: props.doctype, docname: null, perm_type: "create" },
+	params: { doctype: props.doctype, docname: "", perm_type: "create" },
 	auto: true,
 })
 
@@ -357,7 +382,7 @@ function fetchDocumentList(start = 0) {
 
 	if (appliedFilters.value) filters.push(...appliedFilters.value)
 
-	if (workflowStateField.value) {
+	if (workflowStateField.value && !listOptions.value.fields.includes(workflowStateField.value)) {
 		listOptions.value.fields.push(workflowStateField.value)
 	}
 

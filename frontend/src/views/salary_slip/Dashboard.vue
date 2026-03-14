@@ -1,8 +1,8 @@
 <template>
 	<BaseLayout :pageTitle="__('Salary Slips')">
 		<template #body>
-			<div class="flex flex-col items-center my-7 p-4">
-				<div class="flex flex-col w-full bg-white rounded py-5 px-3.5 gap-5">
+			<div class="flex flex-col items-center mt-4 mb-4 p-4">
+				<div class="flex flex-col w-full card-premium p-4 gap-5">
 					<div v-if="lastSalarySlip && lastSalarySlip.year_to_date" class="flex flex-col w-full gap-1.5">
 						<span class="text-gray-600 text-sm font-medium leading-5">
 							{{ __("Year To Date") }}
@@ -26,10 +26,10 @@
 					/>
 				</div>
 
-				<div class="flex flex-col items-center mt-5 mb-7 w-full">
+				<div class="flex flex-col items-center mt-4 mb-4 w-full">
 					<div
 						v-if="documents.data?.length"
-						class="flex flex-col bg-white rounded mt-5 overflow-auto w-full"
+						class="flex flex-col glass-section rounded-xl mt-5 overflow-auto w-full"
 					>
 						<div
 							class="p-3.5 items-center justify-between border-b cursor-pointer"
@@ -115,9 +115,9 @@ const documents = createListResource({
 const lastSalarySlip = computed(() => documents.data?.[0])
 
 function getPeriodLabel(period) {
-	return `${dayjs(period?.start_date).format("MMM YYYY")} - ${dayjs(
+	return `${dayjs(period?.start_date).format("MMMM YYYY")} - ${dayjs(
 		period?.end_date
-	).format("MMM YYYY")}`
+	).format("MMMM YYYY")}`
 }
 
 watch(

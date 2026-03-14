@@ -1,12 +1,17 @@
 <template>
 	<BaseLayout pageTitle="Attendance">
 		<template #body>
-			<div class="flex flex-col mt-7 mb-7 p-4 gap-7">
+			<div class="flex flex-col mt-5 mb-5 p-4 gap-5">
 				<AttendanceCalendar />
-				<div class="w-full">
-					<router-link :to="{ name: 'AttendanceRequestFormView' }" v-slot="{ navigate }">
+				<div class="flex gap-3 w-full">
+					<router-link :to="{ name: 'AttendanceRequestFormView' }" v-slot="{ navigate }" class="flex-1">
 						<Button @click="navigate" variant="solid" class="w-full py-5 text-base">
 							{{ __("Request Attendance") }}
+						</Button>
+					</router-link>
+					<router-link :to="{ name: 'GeniusAttendanceCorrection' }" v-slot="{ navigate }" class="flex-1">
+						<Button @click="navigate" variant="outline" class="w-full py-5 text-base">
+							{{ __("Fix Attendance") }}
 						</Button>
 					</router-link>
 				</div>
@@ -69,12 +74,18 @@ import {
 	myShiftRequests,
 } from "@/data/attendance"
 
+const employee = inject("$employee")
 const dayjs = inject("$dayjs")
 
 const shifts = createResource({
 	url: "hrms.api.get_shifts",
 	auto: true,
 	cache: "hrms:shifts",
+	makeParams() {
+		return {
+			employee: employee.data?.name,
+		}
+	},
 	transform: (data) => {
 		return data.map((assignment) => {
 			assignment.doctype = "Shift Assignment"

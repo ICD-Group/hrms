@@ -1,7 +1,7 @@
 <template>
 	<!-- Filter Action Sheet -->
 	<div
-		class="bg-white w-full flex flex-col items-center justify-center pb-5 max-h-[calc(100vh-5rem)]"
+		class="bg-white w-full flex flex-col items-center justify-center pb-5 max-h-[calc(100vh-5rem)] rounded-t-2xl"
 	>
 		<div class="w-full pt-8 pb-5 border-b text-center sticky top-0 z-[100]">
 			<span class="text-gray-900 font-bold text-lg">{{ __("Filters") }} </span>
@@ -30,7 +30,7 @@
 								class="text-sm text-gray-800"
 								:class="[
 									option === filters[filter.fieldname].value
-										? '!border !border-gray-800 !text-gray-900 !bg-gray-50 !font-medium'
+										? '!border !border-icd-600 !text-icd-600 !bg-icd-50 !font-medium'
 										: '!font-normal',
 								]"
 							>

@@ -94,7 +94,12 @@ watch(
 function getFilteredFields(fields) {
 	// reduce noise from the form view by excluding unnecessary fields
 	// eg: employee and other details can be fetched from the session user
-	const excludeFields = ["naming_series"]
+	const excludeFields = [
+		"naming_series",
+		"advance_account",
+		"mode_of_payment",
+		"exchange_rate",
+	]
 	const extraFields = [
 		"employee",
 		"employee_name",
@@ -120,8 +125,7 @@ function applyFilters(fields) {
 				company: employeeAdvance.value.company,
 				is_group: 0,
 				root_type: "Asset",
-				account_type: "Receivable",
-				account_currency: ["in", currencies],
+				account_currency: ("in", currencies),
 			}
 		}
 
@@ -134,6 +138,8 @@ function setExchangeRate() {
 	const exchange_rate_field = formFields.data?.find(
 		(field) => field.fieldname === "exchange_rate"
 	)
+
+	if (!exchange_rate_field) return
 
 	if (employeeAdvance.value.currency === companyCurrency.value) {
 		employeeAdvance.value.exchange_rate = 1

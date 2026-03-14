@@ -10,7 +10,7 @@
 	/>
 
 	<div v-else-if="props.fieldtype === 'Date'" class="text-gray-900 text-base">
-		{{ dayjs(props.value).format("D MMM YYYY") }}
+		{{ dayjs(props.value).format("DD-MM-YYYY") }}
 	</div>
 
 	<Input

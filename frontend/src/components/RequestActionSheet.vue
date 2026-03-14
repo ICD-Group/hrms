@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="document?.doc"
-		class="bg-white w-full flex flex-col items-center justify-center pb-5 max-h-[calc(100vh-5rem)]"
+		class="bg-white w-full flex flex-col items-center justify-center pb-5 max-h-[calc(100vh-5rem)] rounded-t-2xl"
 	>
 		<!-- Header -->
 		<div
@@ -13,7 +13,7 @@
 			<FeatherIcon
 				v-if="props.showOpenForm"
 				name="external-link"
-				class="h-4 w-4 text-gray-500 cursor-pointer"
+				class="h-4 w-4 text-gray-700 cursor-pointer"
 				@click="openFormView"
 			/>
 		</div>

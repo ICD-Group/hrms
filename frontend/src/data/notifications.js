@@ -1,4 +1,5 @@
 import { createResource, createListResource } from "frappe-ui"
+import { watch } from "vue"
 import { userResource } from "./user"
 
 export const unreadNotificationsCount = createResource({
@@ -10,7 +11,7 @@ export const unreadNotificationsCount = createResource({
 
 export const notifications = createListResource({
 	doctype: "PWA Notification",
-	filters: { to_user: userResource.data.name },
+	filters: {},
 	fields: [
 		"name",
 		"from_user",
@@ -27,6 +28,13 @@ export const notifications = createListResource({
 		unreadNotificationsCount.reload()
 	},
 })
+
+// Set to_user filter when user data loads (avoids undefined at import time)
+watch(() => userResource.data?.name, (name) => {
+	if (name) {
+		notifications.filters.to_user = name
+	}
+}, { immediate: true })
 
 export const arePushNotificationsEnabled = createResource({
 	url: "hrms.api.are_push_notifications_enabled",

@@ -4,26 +4,33 @@
 		<meta charset="UTF-8" />
 		<meta
 			name="viewport"
-			content="width=device-width, initial-scale=1.0, viewport-fit=cover maximum-scale=1.0, user-scalable=no"
+			content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
 		/>
-		<title>Frappe HR</title>
+		<title>ICD HR</title>
+
+		<!-- OG Meta Tags for iOS sharing -->
+		<meta property="og:title" content="ICD HR" />
+		<meta property="og:description" content="ICD Group - Employee Self-Service Portal" />
+		<meta property="og:image" content="/assets/hrms/manifest/manifest-icon-512.maskable.png" />
+		<meta property="og:type" content="website" />
+		<meta name="description" content="ICD Group - Employee Self-Service Portal" />
 
 		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-title" content="Frappe HR" />
+		<meta name="apple-mobile-web-app-title" content="ICD HR" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="white" />
 		<!-- required for setting the status bar bg as white -->
 		<meta name="theme-color" content="#fff" />
 
-		<!-- PWA -->
+		<!-- PWA - cache bust v8.6 -->
 		<link
 			rel="icon"
 			type="image/png"
 			sizes="196x196"
-			href="/assets/hrms/manifest/favicon-196.png"
+			href="/assets/hrms/manifest/favicon-196.png?v=8.6"
 		/>
 		<link
 			rel="apple-touch-icon"
-			href="/assets/hrms/manifest/apple-icon-180.png"
+			href="/assets/hrms/manifest/apple-icon-180.png?v=8.6"
 		/>
 
 		<link
@@ -178,17 +185,25 @@
 		/>
 	</head>
 	<body class="antialiased">
-		<div id="app"></div>
+		<a href="#app" class="sr-only focus:not-sr-only focus:absolute focus:z-[99999] focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold">Skip to content</a>
+		<div id="app" role="main">
+			<!-- Inline splash screen - shows instantly while JS loads, prevents white flash -->
+			<div id="app-splash" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#3b0764 0%,#5b21b6 40%,#7c3aed 70%,#a78bfa 100%);transition:opacity .3s ease">
+				<div style="text-align:center">
+					<div style="width:56px;height:56px;margin:0 auto 16px;border-radius:16px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center">
+						<svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="animation:sp-pulse 1.5s ease-in-out infinite"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,.9)" stroke-width="2"/><path d="M12 6v6l4 2" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round"/></svg>
+					</div>
+					<div style="color:white;font-size:18px;font-weight:800;letter-spacing:-.02em;font-family:-apple-system,BlinkMacSystemFont,sans-serif">ICD HR</div>
+					<div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:600;margin-top:4px">Loading...</div>
+				</div>
+			</div>
+			<style>#app-splash{pointer-events:none}@keyframes sp-pulse{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}</style>
+			<script>setTimeout(function(){var s=document.getElementById('app-splash');if(s&&s.style.opacity!=='0'){s.querySelector('div > div:last-child').textContent='Refreshing...';window.location.replace('/assets/hrms/frontend/reset.html')}},8000)</script>
+		</div>
 		<div id="modals"></div>
 		<div id="popovers"></div>
 
-		<script>
-			window.csrf_token = "{{ csrf_token }}"
-			window.site_name = '{{ site_name }}'
-			if (!window.frappe) window.frappe = {}
-			frappe.boot = {{ boot }}
-		</script>
-
+		<!-- Custom scripts (Frappe boot, version tracking, VAPID push) injected by postbuild -->
 		<script type="module" src="/src/main.js"></script>
 	</body>
 </html>

@@ -1,8 +1,8 @@
 app_name = "hrms"
-app_title = "Frappe HR"
-app_publisher = "Frappe Technologies Pvt. Ltd."
-app_description = "Modern HR and Payroll Software"
-app_email = "contact@frappe.io"
+app_title = "ICD HR"
+app_publisher = "ICD Group"
+app_description = "ICD Group - Employee Self-Service Portal"
+app_email = "taj@icloudist.com"
 app_license = "GNU General Public License (v3)"
 required_apps = ["frappe/erpnext"]
 source_link = "http://github.com/frappe/hrms"
@@ -10,8 +10,8 @@ source_link = "http://github.com/frappe/hrms"
 add_to_apps_screen = [
 	{
 		"name": "hrms",
-		"logo": "/assets/hrms/images/frappe-hr-logo.svg",
-		"title": "Frappe HR",
+		"logo": "/assets/hrms/manifest/apple-icon-180.png",
+		"title": "ICD HR",
 		"route": "/app/hr",
 		"has_permission": "hrms.hr.utils.check_app_permission",
 	}
@@ -132,13 +132,13 @@ before_app_uninstall = "hrms.setup.before_app_uninstall"
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
+permission_query_conditions = {
+	"PWA Notification": "hrms.hr.doctype.pwa_notification.pwa_notification.get_permission_query_conditions",
+}
+
+has_permission = {
+	"PWA Notification": "hrms.hr.doctype.pwa_notification.pwa_notification.has_permission",
+}
 
 has_upload_permission = {"Employee": "erpnext.setup.doctype.employee.employee.has_upload_permission"}
 
@@ -159,10 +159,8 @@ override_doctype_class = {
 
 doc_events = {
 	"User": {
-		"validate": [
-			"erpnext.setup.doctype.employee.employee.validate_employee_role",
-			"hrms.overrides.employee_master.update_approver_user_roles",
-		],
+		"validate": "erpnext.setup.doctype.employee.employee.validate_employee_role",
+		"on_update": "erpnext.setup.doctype.employee.employee.update_user_permissions",
 	},
 	"Company": {
 		"validate": "hrms.overrides.company.validate_default_accounts",
@@ -181,9 +179,6 @@ doc_events = {
 		"on_submit": "hrms.hr.doctype.expense_claim.expense_claim.update_payment_for_expense_claim",
 		"on_cancel": "hrms.hr.doctype.expense_claim.expense_claim.update_payment_for_expense_claim",
 		"on_update_after_submit": "hrms.hr.doctype.expense_claim.expense_claim.update_payment_for_expense_claim",
-	},
-	"Unreconcile Payment": {
-		"on_submit": "hrms.hr.doctype.expense_claim.expense_claim.update_payment_for_expense_claim",
 	},
 	"Journal Entry": {
 		"validate": "hrms.hr.doctype.expense_claim.expense_claim.validate_expense_claim_in_jv",

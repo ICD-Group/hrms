@@ -1,3 +1,5 @@
+import { alertController } from "@ionic/vue"
+
 export const showErrorAlert = async (message) => {
 	const alert = await alertController.create({
 		header: "Error",
@@ -7,5 +9,3 @@ export const showErrorAlert = async (message) => {
 
 	await alert.present()
 }
-
-import { alertController } from "@ionic/vue"

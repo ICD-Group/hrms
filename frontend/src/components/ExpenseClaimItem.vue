@@ -5,12 +5,12 @@
 		:employeeName="props.doc.employee_name"
 	>
 		<template #left>
-			<ExpenseIcon class="h-5 w-5 text-gray-500" />
+			<ExpenseIcon class="h-5 w-5 text-gray-700" />
 			<div class="flex flex-col items-start gap-1.5">
 				<div class="text-base font-normal text-gray-800">
 					{{ claimTitle }}
 				</div>
-				<div class="text-xs font-normal text-gray-500">
+				<div class="text-xs font-normal text-gray-700">
 					<span>{{ claimDates }}</span>
 					<span class="whitespace-pre"> &middot; </span>
 					<span class="whitespace-nowrap">
@@ -21,7 +21,7 @@
 		</template>
 		<template #right>
 			<Badge variant="outline" :theme="statusMap[status]" :label="__(status, null, 'Expense Claim')" size="md" />
-			<FeatherIcon name="chevron-right" class="h-5 w-5 text-gray-500" />
+			<FeatherIcon name="chevron-right" class="h-5 w-5 text-gray-700" />
 		</template>
 	</ListItem>
 </template>
@@ -88,12 +88,12 @@ const claimTitle = computed(() => {
 
 const claimDates = computed(() => {
 	if (!props.doc.from_date && !props.doc.to_date)
-		return dayjs(props.doc.posting_date).format("D MMM")
+		return dayjs(props.doc.posting_date).format("DD-MM")
 
 	if (props.doc.from_date === props.doc.to_date) {
-		return dayjs(props.doc.from_date).format("D MMM")
+		return dayjs(props.doc.from_date).format("DD-MM")
 	} else {
-		return `${dayjs(props.doc.from_date).format("D MMM")} - ${dayjs(props.doc.to_date).format(
+		return `${dayjs(props.doc.from_date).format("DD-MM")} - ${dayjs(props.doc.to_date).format(
 			"D MMM"
 		)}`
 	}

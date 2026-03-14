@@ -118,21 +118,24 @@ const advances = createResource({
 	onSuccess(data) {
 		// set advances
 		if (props.id) {
-			expenseClaim.value.advances?.map((advance) => (advance.selected = true))
+			expenseClaim.value.advances?.forEach((advance) => { advance.selected = true })
 		} else {
 			expenseClaim.value.advances = []
 		}
+		if (!expenseClaim.value.advances) {
+			expenseClaim.value.advances = []
+		}
 
-		return data.forEach((advance) => {
+		data.forEach((advance) => {
 			if (
 				props.id &&
-				expenseClaim.value.advances?.some(
+				expenseClaim.value.advances.some(
 					(entry) => entry.employee_advance === advance.name
 				)
 			)
 				return
 
-			expenseClaim.value.advances?.push({
+			expenseClaim.value.advances.push({
 				employee_advance: advance.name,
 				purpose: advance.purpose,
 				posting_date: advance.posting_date,
@@ -217,6 +220,8 @@ function getFilteredFields(fields) {
 		"task",
 		"taxes_and_charges_sb",
 		"advance_payments_sb",
+		"payable_account",
+		"cost_center",
 	]
 	const extraFields = [
 		"employee",

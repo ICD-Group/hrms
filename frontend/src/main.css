@@ -10,13 +10,142 @@ input:disabled {
 	color: var(--tw-text-color);
 }
 
-/* For Webkit-based browsers (Chrome, Safari and Opera) */
+/* Date & Time native inputs - font, alignment, centering */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+	font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+	letter-spacing: 0;
+}
 input::-webkit-date-and-time-value {
 	text-align: left;
+	margin: 0;
+	padding: 0;
+}
+input::-webkit-datetime-edit {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	padding: 0;
+	font-family: inherit;
+	font-size: inherit;
+	font-weight: inherit;
+	letter-spacing: 0.02em;
+}
+input::-webkit-datetime-edit-fields-wrapper {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	padding: 0;
+}
+input::-webkit-datetime-edit-text,
+input::-webkit-datetime-edit-month-field,
+input::-webkit-datetime-edit-day-field,
+input::-webkit-datetime-edit-year-field,
+input::-webkit-datetime-edit-hour-field,
+input::-webkit-datetime-edit-minute-field,
+input::-webkit-datetime-edit-ampm-field {
+	font-family: inherit;
+	font-size: inherit;
+	font-weight: inherit;
+	padding: 0 1px;
+	color: #1f2937;
+}
+input::-webkit-calendar-picker-indicator {
+	opacity: 0.5;
+	cursor: pointer;
+	padding: 0;
+	margin-left: auto;
 }
 
 body {
 	-webkit-tap-highlight-color: transparent;
+	touch-action: pan-x pan-y;
+	-ms-touch-action: pan-x pan-y;
+	overscroll-behavior: none;
+	background: linear-gradient(180deg, #f5f0f9 0%, #f8f7fc 35%, #f6f7fb 100%);
+	font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	/* Disable long-press context menu & text selection on mobile */
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+/* Prevent zoom on double-tap and pinch */
+* {
+	touch-action: pan-x pan-y;
+}
+
+/* Prevent zoom on input focus (iOS) */
+input, select, textarea {
+	font-size: 16px !important;
+	-webkit-user-select: text;
+	user-select: text;
+	-webkit-touch-callout: default;
+}
+
+/* ===== ICD Brand Colors - iOS 26.2 Transparency v6.0.0 2026-02-14 ===== */
+:root {
+	--icd-purple: #4D067B;
+	--icd-purple-light: #7B2FA0;
+	--icd-purple-50: #f8f0fc;
+	--icd-purple-100: #ede0f5;
+	--icd-purple-200: #d9bfe9;
+	--icd-purple-300: #c49ddd;
+	--icd-purple-400: #a86cc9;
+	--icd-purple-500: #7B2FA0;
+	--icd-purple-600: #4D067B;
+	--icd-purple-700: #3D0562;
+	--icd-purple-800: #2E044A;
+	--icd-purple-900: #1F0331;
+	/* Override frappe-ui gray solid -> ICD Purple */
+	--surface-gray-7: #4D067B;
+	--surface-gray-6: #7B2FA0;
+	--surface-gray-5: #3a0560;
+}
+
+/* frappe-ui Button variant="solid" gray -> ICD Purple */
+button.bg-surface-gray-7,
+[role="button"].bg-surface-gray-7,
+.bg-surface-gray-7[class*="btn"],
+.bg-surface-gray-7:is(button, a) {
+	background-color: var(--icd-purple) !important;
+}
+button.bg-surface-gray-7:hover,
+button.hover\:bg-surface-gray-6:hover {
+	background-color: var(--icd-purple-light) !important;
+}
+button.bg-surface-gray-7:active,
+button.active\:bg-surface-gray-5:active {
+	background-color: #3a0560 !important;
+}
+
+/* Legacy class overrides */
+button.bg-gray-900,
+button.bg-black,
+[role="button"].bg-gray-900,
+[role="button"].bg-black {
+	background-color: var(--icd-purple) !important;
+}
+
+/* Disabled solid buttons */
+button.disabled\:bg-gray-700:disabled,
+button.disabled\:bg-gray-400:disabled {
+	background-color: #9ca3af !important;
+}
+
+/* ===== ICD Default Avatar - Purple instead of gray ===== */
+.bg-surface-gray-2.rounded-full,
+.bg-surface-gray-2.rounded-full.text-ink-gray-5 {
+	background-color: #ede0f5 !important;
+	color: #4D067B !important;
 }
 
 .hide-scrollbar::-webkit-scrollbar {
@@ -28,3 +157,809 @@ body {
 	-ms-overflow-style: none; /* IE and Edge */
 	scrollbar-width: none; /* Firefox */
 }
+
+
+/* ========================================
+   PREMIUM UI - iOS 26.2 Transparency Design
+   ======================================== */
+
+/* --- Ambient Background --- */
+.app-bg-ambient {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: -1;
+	pointer-events: none;
+	background: linear-gradient(180deg, #f5f0f9 0%, #f8f7fc 35%, #f6f7fb 100%);
+}
+
+/* Transparent Ionic content */
+ion-content {
+	--background: transparent;
+}
+ion-content::part(background) {
+	background: transparent;
+}
+
+/* --- Pro Cards with visible borders --- */
+.card-premium {
+	background: #ffffff;
+	border-radius: 1rem;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-premium:active {
+	transform: scale(0.985);
+}
+
+.glass-card {
+	background: #ffffff;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	border-radius: 1rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* --- Section Card --- */
+.glass-section {
+	background: rgba(255, 255, 255, 0.42);
+	border: 0.5px solid rgba(255, 255, 255, 0.6);
+	border-radius: 1rem;
+	box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* --- Header (Transparent) --- */
+.glass-header {
+	background: rgba(255, 255, 255, 0.6);
+	backdrop-filter: blur(12px) saturate(120%);
+	-webkit-backdrop-filter: blur(12px) saturate(120%);
+	border-bottom: 0.5px solid rgba(77, 6, 123, 0.05);
+}
+
+/* --- Tab Bar (Transparent) --- */
+.glass-tabbar {
+	background: rgba(255, 255, 255, 0.88);
+	backdrop-filter: blur(16px) saturate(130%);
+	-webkit-backdrop-filter: blur(16px) saturate(130%);
+	border-top: 1px solid rgba(77, 6, 123, 0.12);
+	box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* --- ICD Gradients --- */
+.gradient-icd {
+	background: linear-gradient(135deg, #4D067B 0%, #7B2FA0 50%, #a86cc9 100%);
+}
+.gradient-icd-subtle {
+	background: linear-gradient(135deg, #f8f0fc 0%, #ede0f5 50%, #d9bfe9 100%);
+}
+.gradient-icd-dark {
+	background: linear-gradient(135deg, #1F0331 0%, #2E044A 50%, #4D067B 100%);
+}
+
+/* --- Shimmer Loading Effect --- */
+@keyframes shimmer {
+	0% { background-position: -200% 0; }
+	100% { background-position: 200% 0; }
+}
+.shimmer {
+	background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* --- Pulse Glow for Check-in Button (Green) --- */
+@keyframes pulse-glow {
+	0%, 100% {
+		box-shadow: 0 4px 14px -2px rgba(5, 150, 105, 0.4), 0 0 0 0 rgba(16, 185, 129, 0.3);
+	}
+	50% {
+		box-shadow: 0 4px 14px -2px rgba(5, 150, 105, 0.4), 0 0 0 10px rgba(16, 185, 129, 0);
+	}
+}
+.pulse-glow {
+	animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* --- Confetti Burst (CSS only) --- */
+@keyframes confetti-fall {
+	0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+	100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.confetti-piece {
+	position: fixed;
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+	z-index: 9999;
+	pointer-events: none;
+	animation: confetti-fall 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* --- Stagger Animation for List Items --- */
+@keyframes slide-up-fade {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+.animate-slide-up {
+	animation: slide-up-fade 0.35s ease-out forwards;
+	opacity: 0;
+}
+.animate-slide-up:nth-child(1) { animation-delay: 0.02s; }
+.animate-slide-up:nth-child(2) { animation-delay: 0.06s; }
+.animate-slide-up:nth-child(3) { animation-delay: 0.10s; }
+.animate-slide-up:nth-child(4) { animation-delay: 0.14s; }
+.animate-slide-up:nth-child(5) { animation-delay: 0.18s; }
+.animate-slide-up:nth-child(6) { animation-delay: 0.22s; }
+
+/* --- Scale in animation --- */
+@keyframes scale-in {
+	from { transform: scale(0.9); opacity: 0; }
+	to { transform: scale(1); opacity: 1; }
+}
+.animate-scale-in {
+	animation: scale-in 0.3s ease-out forwards;
+}
+
+/* --- Checkmark success animation --- */
+@keyframes checkmark-pop {
+	0% { transform: scale(0); opacity: 0; }
+	50% { transform: scale(1.2); }
+	100% { transform: scale(1); opacity: 1; }
+}
+.animate-checkmark {
+	animation: checkmark-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* --- Counter animation --- */
+@keyframes count-up {
+	from { opacity: 0; transform: translateY(8px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+.animate-count {
+	animation: count-up 0.4s ease-out forwards;
+}
+
+/* --- Progress Ring --- */
+.progress-ring-bg {
+	stroke: #ede0f5;
+}
+.progress-ring-fg {
+	stroke: #4D067B;
+}
+.progress-ring-circle {
+	transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+	transform: rotate(-90deg);
+	transform-origin: 50% 50%;
+}
+
+/* --- Ripple Effect --- */
+.ripple {
+	position: relative;
+	overflow: hidden;
+}
+.ripple::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 0;
+	height: 0;
+	border-radius: 50%;
+	background: rgba(77, 6, 123, 0.12);
+	transform: translate(-50%, -50%);
+	transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+	opacity: 0;
+}
+.ripple:active::after {
+	width: 300px;
+	height: 300px;
+	opacity: 1;
+	transition: 0s;
+}
+
+/* --- Page Transitions --- */
+.page-slide-enter-active,
+.page-slide-leave-active {
+	transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.page-slide-enter-from {
+	opacity: 0;
+	transform: translateX(20px);
+}
+.page-slide-leave-to {
+	opacity: 0;
+	transform: translateX(-20px);
+}
+
+.page-fade-enter-active,
+.page-fade-leave-active {
+	transition: opacity 0.2s ease;
+}
+.page-fade-enter-from,
+.page-fade-leave-to {
+	opacity: 0;
+}
+
+/* --- Tab Indicator Slide --- */
+.tab-indicator {
+	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
+}
+
+/* --- Streak Glow Badge --- */
+@keyframes streak-glow {
+	0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); }
+	50% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.6); }
+}
+.streak-glow {
+	animation: streak-glow 2s ease-in-out infinite;
+}
+
+/* --- Float Up Animation (for points) --- */
+@keyframes float-up {
+	0% { opacity: 1; transform: translateY(0); }
+	100% { opacity: 0; transform: translateY(-40px); }
+}
+.animate-float-up {
+	animation: float-up 1s ease-out forwards;
+}
+
+/* --- Number Ticker --- */
+@keyframes tick-up {
+	from { transform: translateY(100%); opacity: 0; }
+	to { transform: translateY(0); opacity: 1; }
+}
+.animate-tick {
+	display: inline-block;
+	animation: tick-up 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* ========================================
+   PREMIUM FORM FIELDS - Beautiful Inputs
+   ======================================== */
+
+/* Premium input wrapper */
+.field-group {
+	margin-bottom: 0.25rem;
+}
+
+/* Premium label */
+.field-label {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: #374151;
+	margin-bottom: 0.375rem;
+	letter-spacing: 0.01em;
+	font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.field-label .field-icon {
+	width: 1rem;
+	height: 1rem;
+	color: #7B2FA0;
+}
+
+/* Premium form controls - GENIUS centered text */
+.premium-input,
+.premium-select,
+.premium-textarea {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0 1rem;
+	height: 3rem;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	line-height: 3rem;
+	color: #1f2937;
+	background-color: #f9fafb;
+	border: 1.5px solid #e5e7eb;
+	border-radius: 0.75rem;
+	outline: none;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+	-webkit-appearance: none;
+	appearance: none;
+	font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+	letter-spacing: -0.01em;
+}
+.premium-input:focus,
+.premium-select:focus,
+.premium-textarea:focus {
+	border-color: #7B2FA0;
+	box-shadow: 0 0 0 3px rgba(123, 47, 160, 0.08);
+	background-color: #ffffff;
+}
+.premium-input::placeholder,
+.premium-textarea::placeholder {
+	color: #9ca3af;
+	font-weight: 400;
+}
+
+/* Select arrow */
+.premium-select {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+	background-size: 1rem;
+	padding-right: 2.5rem;
+}
+
+/* Date & Time inputs - flex centering for native mobile pickers */
+.premium-input[type="date"],
+.premium-input[type="time"],
+.premium-input[type="datetime-local"] {
+	display: -webkit-flex;
+	display: flex;
+	-webkit-align-items: center;
+	align-items: center;
+	height: 3rem;
+	line-height: normal;
+	padding: 0 1rem;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	color: #1f2937;
+}
+
+/* Textarea - different sizing since multi-line */
+.premium-textarea {
+	display: block;
+	height: auto;
+	min-height: 5rem;
+	line-height: 1.5;
+	padding: 0.75rem 1rem;
+	resize: vertical;
+}
+
+/* Checkbox premium */
+.premium-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	padding: 0.75rem;
+	background: #faf9fb;
+	border: 1.5px solid #e5e7eb;
+	border-radius: 0.75rem;
+	cursor: pointer;
+	transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.premium-checkbox:has(input:checked) {
+	border-color: #7B2FA0;
+	background: #f8f0fc;
+}
+.premium-checkbox input[type="checkbox"] {
+	width: 1.125rem;
+	height: 1.125rem;
+	accent-color: #4D067B;
+	border-radius: 0.25rem;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+.premium-checkbox label {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #374151;
+	cursor: pointer;
+}
+
+/* Premium button in forms */
+.premium-submit {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	padding: 0.875rem;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: #fff;
+	background: linear-gradient(135deg, #4D067B 0%, #7B2FA0 100%);
+	border: none;
+	border-radius: 0.75rem;
+	cursor: pointer;
+	transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+	box-shadow: 0 2px 8px rgba(77, 6, 123, 0.25);
+	letter-spacing: 0.02em;
+}
+.premium-submit:active {
+	transform: scale(0.97);
+}
+.premium-submit:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
+}
+
+/* Outlined premium button */
+.premium-submit-outline {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	padding: 0.8125rem;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: #4D067B;
+	background: #fff;
+	border: 2px solid #4D067B;
+	border-radius: 0.75rem;
+	cursor: pointer;
+	transition: transform 0.15s ease, background-color 0.15s ease;
+	letter-spacing: 0.02em;
+}
+.premium-submit-outline:active {
+	transform: scale(0.97);
+	background: #f8f0fc;
+}
+
+/* Section title */
+.section-title {
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: #1f2937;
+	letter-spacing: -0.01em;
+	margin-bottom: 0.75rem;
+}
+
+/* Status badges */
+.status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem 0.625rem;
+	border-radius: 9999px;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+/* Premium modal header */
+.premium-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	border-bottom: 1px solid #f3f4f6;
+}
+.premium-modal-title {
+	font-size: 1.125rem;
+	font-weight: 800;
+	color: #1f2937;
+}
+.premium-modal-close {
+	width: 2rem;
+	height: 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.5rem;
+	border: none;
+	background: #f3f4f6;
+	color: #6b7280;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+.premium-modal-close:active {
+	background: #e5e7eb;
+}
+
+/* Grid row with proper spacing */
+.field-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.75rem;
+}
+
+/* Premium card for info sections */
+.info-card {
+	background: rgba(255, 255, 255, 0.42);
+	border-radius: 0.875rem;
+	border: 0.5px solid rgba(255, 255, 255, 0.6);
+	box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.03);
+	overflow: hidden;
+	padding: 1rem;
+}
+
+/* Stat grid inside cards */
+.stat-grid {
+	display: grid;
+	gap: 0;
+}
+.stat-grid > div {
+	text-align: center;
+	padding: 1rem 0.5rem;
+}
+.stat-grid .stat-value {
+	font-size: 1.25rem;
+	font-weight: 800;
+	line-height: 1.2;
+}
+.stat-grid .stat-label {
+	font-size: 0.6875rem;
+	font-weight: 500;
+	color: #6b7280;
+	margin-top: 0.25rem;
+}
+
+/* ========================================
+   GLOBAL FONT & TEXT ALIGNMENT FIXES
+   ======================================== */
+
+/* Ensure all Ionic elements use our font stack */
+ion-page, ion-content, ion-header, ion-toolbar, ion-title,
+ion-modal, ion-item, ion-label, ion-note, ion-text {
+	font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Fix all native form elements inside the app */
+input, select, textarea, button {
+	font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	letter-spacing: -0.01em;
+}
+
+/* Ensure text in cards/sections is well-rendered */
+.card-premium, .glass-card, .glass-section, .info-card {
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+/* Fix Ionic modal backdrop */
+ion-modal::part(backdrop) {
+	background: rgba(0, 0, 0, 0.4);
+}
+
+/* Fix Ionic toolbar padding in modals */
+ion-toolbar.premium-modal-header {
+	--padding-start: 1rem;
+	--padding-end: 1rem;
+}
+
+/* ========================================
+   FIX: Form page transparency + Date field alignment
+   v5.7.2 - 2026-02-12
+   ======================================== */
+
+/* Ensure ion-page is transparent so gradient shows through */
+ion-page {
+	background: transparent !important;
+}
+.ion-page {
+	background: transparent !important;
+}
+
+/* Fix frappe-ui form-input date/time - vertical centering + match Link fields */
+input.form-input[type="date"],
+input.form-input[type="time"],
+input.form-input[type="datetime-local"] {
+	-webkit-appearance: none;
+	appearance: none;
+	padding-top: 0;
+	padding-bottom: 0;
+	height: 2.5rem;
+	min-height: 2.5rem;
+	line-height: 2.5rem;
+	font-weight: 500;
+	color: #1f2937;
+	letter-spacing: 0;
+}
+
+/* Fix form content containers - transparent for glass effect */
+.grow.overflow-y-auto {
+	background: transparent;
+}
+
+/* ========================================
+   DARK MODE - iOS 26.2 Transparency Night
+   Premium Build v6.0.0 - 2026-02-14
+   ======================================== */
+
+/* Body background */
+.dark body,
+body.dark {
+	background: linear-gradient(180deg, #0f0a1a 0%, #1a1028 35%, #12101e 100%);
+}
+.dark .app-bg-ambient {
+	background: linear-gradient(180deg, #0f0a1a 0%, #1a1028 35%, #12101e 100%);
+}
+
+/* Cards - Dark Mode */
+.dark .card-premium {
+	background: rgba(30, 30, 46, 0.65);
+	border-color: rgba(255, 255, 255, 0.1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.dark .glass-card {
+	background: rgba(30, 30, 46, 0.4);
+	border-color: rgba(255, 255, 255, 0.05);
+}
+.dark .glass-section {
+	background: rgba(30, 30, 46, 0.42);
+	border-color: rgba(255, 255, 255, 0.05);
+}
+.dark .info-card {
+	background: rgba(30, 30, 46, 0.42);
+	border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Header & Tab Bar - Dark Transparent */
+.dark .glass-header {
+	background: rgba(15, 10, 26, 0.6);
+	backdrop-filter: blur(12px) saturate(120%);
+	-webkit-backdrop-filter: blur(12px) saturate(120%);
+	border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+.dark .glass-tabbar {
+	background: rgba(15, 10, 26, 0.88);
+	backdrop-filter: blur(16px) saturate(130%);
+	-webkit-backdrop-filter: blur(16px) saturate(130%);
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Global text - ALL white in dark mode */
+.dark {
+	color: #ffffff;
+}
+.dark .section-title,
+.dark .field-label,
+.dark label,
+.dark p,
+.dark span,
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+	color: #ffffff;
+}
+/* Preserve subtle secondary text */
+.dark .text-gray-400 {
+	color: #d1d5db;
+}
+
+/* Form fields */
+.dark .premium-input,
+.dark .premium-select,
+.dark .premium-textarea {
+	background-color: rgba(30, 30, 46, 0.6);
+	border-color: rgba(255, 255, 255, 0.1);
+	color: #e5e7eb;
+}
+.dark .premium-input:focus,
+.dark .premium-select:focus,
+.dark .premium-textarea:focus {
+	border-color: #a86cc9;
+	box-shadow: 0 0 0 3px rgba(168, 108, 201, 0.15);
+	background-color: rgba(30, 30, 46, 0.8);
+}
+.dark .premium-input::placeholder,
+.dark .premium-textarea::placeholder {
+	color: #6b7280;
+}
+
+/* Date/Time inputs */
+.dark input::-webkit-datetime-edit-text,
+.dark input::-webkit-datetime-edit-month-field,
+.dark input::-webkit-datetime-edit-day-field,
+.dark input::-webkit-datetime-edit-year-field,
+.dark input::-webkit-datetime-edit-hour-field,
+.dark input::-webkit-datetime-edit-minute-field,
+.dark input::-webkit-datetime-edit-ampm-field {
+	color: #e5e7eb;
+}
+
+/* Checkbox */
+.dark .premium-checkbox {
+	background: rgba(30, 30, 46, 0.6);
+	border-color: rgba(255, 255, 255, 0.1);
+}
+.dark .premium-checkbox:has(input:checked) {
+	border-color: #a86cc9;
+	background: rgba(168, 108, 201, 0.15);
+}
+.dark .premium-checkbox label {
+	color: #d1d5db;
+}
+
+/* Buttons */
+.dark .premium-submit-outline {
+	color: #a86cc9;
+	background: rgba(30, 30, 46, 0.6);
+	border-color: #a86cc9;
+}
+.dark .premium-submit-outline:active {
+	background: rgba(168, 108, 201, 0.15);
+}
+
+/* Modal */
+.dark .premium-modal-header {
+	border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+.dark .premium-modal-title {
+	color: #e5e7eb;
+}
+.dark .premium-modal-close {
+	background: rgba(255, 255, 255, 0.08);
+	color: #9ca3af;
+}
+
+/* Progress ring */
+.dark .progress-ring-bg {
+	stroke: rgba(168, 108, 201, 0.2);
+}
+.dark .progress-ring-fg {
+	stroke: #a86cc9;
+}
+
+/* Shimmer loading */
+.dark .shimmer {
+	background: linear-gradient(90deg, #1e1e2e 25%, #2a2a3e 50%, #1e1e2e 75%);
+	background-size: 200% 100%;
+}
+
+/* Ion page transparency */
+.dark ion-page {
+	background: transparent !important;
+}
+
+/* Hero gradient - adapt for dark */
+.dark .home-hero-gradient {
+	background: linear-gradient(135deg, #1a0530 0%, #2E044A 40%, #4D067B 70%, #7B2FA0 100%);
+}
+
+/* Stat cards in hero - dark mode */
+.dark .stat-present { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.2); }
+.dark .stat-absent { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.15); }
+.dark .stat-leave { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.15); }
+.dark .stat-points { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.2); }
+
+/* ========================================
+   SPRING ANIMATIONS
+   ======================================== */
+
+@keyframes spring-in {
+	0% { transform: scale(0.85); opacity: 0; }
+	60% { transform: scale(1.03); }
+	80% { transform: scale(0.98); }
+	100% { transform: scale(1); opacity: 1; }
+}
+.animate-spring-in {
+	animation: spring-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes spring-slide-up {
+	0% { transform: translateY(20px); opacity: 0; }
+	60% { transform: translateY(-3px); }
+	100% { transform: translateY(0); opacity: 1; }
+}
+.animate-spring-up {
+	animation: spring-slide-up 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+	opacity: 0;
+}
+.animate-spring-up:nth-child(1) { animation-delay: 0.03s; }
+.animate-spring-up:nth-child(2) { animation-delay: 0.08s; }
+.animate-spring-up:nth-child(3) { animation-delay: 0.13s; }
+.animate-spring-up:nth-child(4) { animation-delay: 0.18s; }
+
+/* Spring press effect for buttons */
+.spring-press {
+	transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.spring-press:active {
+	transform: scale(0.95);
+}
+

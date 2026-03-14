@@ -34,7 +34,7 @@
 								<div class="text-base font-normal text-gray-800">
 									{{ item.account_head }}
 								</div>
-								<div class="text-xs font-normal text-gray-500">
+								<div class="text-xs font-normal text-gray-700">
 									<span> Rate: {{ formatCurrency(item.rate, currency) }} </span>
 									<span class="whitespace-pre"> &middot; </span>
 									<span class="whitespace-nowrap">
@@ -47,7 +47,7 @@
 							<span class="text-gray-700 font-normal rounded text-base">
 								{{ formatCurrency(item.total, currency) }}
 							</span>
-							<FeatherIcon name="chevron-right" class="h-5 w-5 text-gray-500" />
+							<FeatherIcon name="chevron-right" class="h-5 w-5 text-gray-700" />
 						</div>
 					</div>
 				</div>

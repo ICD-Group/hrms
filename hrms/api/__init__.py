@@ -61,8 +61,9 @@ def get_current_employee_info() -> dict:
 
 @frappe.whitelist()
 def get_all_employees() -> list[dict]:
-	return frappe.get_list(
+	return frappe.get_all(
 		"Employee",
+		filters={"status": "Active"},
 		fields=[
 			"name",
 			"employee_name",
@@ -74,15 +75,8 @@ def get_all_employees() -> list[dict]:
 			"image",
 			"status",
 		],
-		limit=999999,
+		limit=10000,
 	)
-
-
-def get_current_employee() -> str:
-	employee = get_current_employee_info().get("name")
-	if not employee:
-		frappe.throw(_("Employee not found"), frappe.PermissionError)
-	return employee
 
 
 # HR Settings
@@ -126,8 +120,7 @@ def are_push_notifications_enabled() -> bool:
 
 # Attendance
 @frappe.whitelist()
-def get_attendance_calendar_events(from_date: str, to_date: str) -> dict[str, str]:
-	employee = get_current_employee()
+def get_attendance_calendar_events(employee: str, from_date: str, to_date: str) -> dict[str, str]:
 	holidays = get_holidays_for_calendar(employee, from_date, to_date)
 	attendance = get_attendance_for_calendar(employee, from_date, to_date)
 	events = {}
@@ -302,8 +295,7 @@ def get_shift_request_approvers(employee: str) -> str | list[str]:
 
 
 @frappe.whitelist()
-def get_shifts() -> list[dict[str, str]]:
-	employee = get_current_employee()
+def get_shifts(employee: str) -> list[dict[str, str]]:
 	ShiftAssignment = frappe.qb.DocType("Shift Assignment")
 	ShiftType = frappe.qb.DocType("Shift Type")
 	return (
@@ -374,7 +366,7 @@ def get_leave_applications(
 
 
 @frappe.whitelist()
-def get_leave_balance_map() -> dict[str, dict[str, float]]:
+def get_leave_balance_map(employee: str) -> dict[str, dict[str, float]]:
 	"""
 	Returns a map of leave type and balance details like:
 	{
@@ -383,8 +375,6 @@ def get_leave_balance_map() -> dict[str, dict[str, float]]:
 	}
 	"""
 	from hrms.hr.doctype.leave_application.leave_application import get_leave_details
-
-	employee = get_current_employee()
 
 	date = getdate()
 	leave_map = {}
@@ -537,9 +527,7 @@ def get_expense_claims(
 
 
 @frappe.whitelist()
-def get_expense_claim_summary() -> dict:
-	employee = get_current_employee()
-
+def get_expense_claim_summary(employee: str) -> dict:
 	from frappe.query_builder.functions import Sum
 
 	Claim = frappe.qb.DocType("Expense Claim")
@@ -627,8 +615,7 @@ def get_expense_approval_details(employee: str) -> dict:
 
 # Employee Advance
 @frappe.whitelist()
-def get_employee_advance_balance() -> list[dict]:
-	employee = get_current_employee()
+def get_employee_advance_balance(employee: str) -> list[dict]:
 	Advance = frappe.qb.DocType("Employee Advance")
 
 	advances = (
@@ -719,11 +706,9 @@ def get_doctype_states(doctype: str) -> dict:
 # File
 @frappe.whitelist()
 def get_attachments(dt: str, dn: str):
-	return frappe.get_list(
-		"File",
-		fields=["name", "file_name", "file_url", "is_private"],
-		filters={"attached_to_name": str(dn), "attached_to_doctype": dt},
-	)
+	from frappe.desk.form.load import get_attachments
+
+	return get_attachments(dt, dn)
 
 
 @frappe.whitelist()
@@ -736,7 +721,10 @@ def upload_base64_file(content, filename, dt=None, dn=None, fieldname=None):
 
 	from frappe.handler import ALLOWED_MIMETYPES
 
+	MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 	decoded_content = base64.b64decode(content)
+	if len(decoded_content) > MAX_FILE_SIZE:
+		frappe.throw(_("File size exceeds the maximum allowed limit of 10MB."))
 	content_type = guess_type(filename)[0]
 	if content_type not in ALLOWED_MIMETYPES:
 		frappe.throw(_("You can only upload JPG, PNG, PDF, TXT or Microsoft documents."))
@@ -775,19 +763,22 @@ def delete_attachment(filename: str):
 def download_salary_slip(name: str):
 	import base64
 
-	from frappe.utils.print_format import download_pdf
+	# Permission check: verify user can access this salary slip
+	if not frappe.has_permission("Salary Slip", "read", name):
+		frappe.throw(_("You don't have permission to download this salary slip"))
 
 	default_print_format = frappe.get_meta("Salary Slip").default_print_format or "Standard"
 
 	try:
-		download_pdf("Salary Slip", name, format=default_print_format)
+		pdf_content = frappe.get_print(
+			"Salary Slip", name, print_format=default_print_format, as_pdf=True
+		)
 	except Exception:
-		frappe.throw(_("Failed to download Salary Slip PDF"))
+		frappe.throw(_("Failed to generate Salary Slip PDF"))
 
-	base64content = base64.b64encode(frappe.local.response.filecontent)
-	content_type = frappe.local.response.type
+	base64content = base64.b64encode(pdf_content).decode("utf-8")
 
-	return f"data:{content_type};base64," + base64content.decode("utf-8")
+	return f"data:application/pdf;base64,{base64content}"
 
 
 # Workflow

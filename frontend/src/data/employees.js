@@ -1,6 +1,7 @@
 import { createResource } from "frappe-ui"
 import { reactive } from "vue"
 import { employeeResource } from "./employee"
+import router from "@/router"
 
 let employeesByID = reactive({})
 let employeesByUserID = reactive({})

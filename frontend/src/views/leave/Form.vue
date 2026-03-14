@@ -137,7 +137,8 @@ watch(
   	(newApprover) => {
 			const approverField = formFields.data.find(f => f.fieldname === "leave_approver")
 			const selected = approverField?.documentList?.find(opt => opt.value === newApprover)
-			leaveApplication.value.leave_approver_name = selected?.label?.split(" : ")[1] || ""
+			const parts = selected?.label?.split(" : ")
+		leaveApplication.value.leave_approver_name = (parts && parts.length > 1) ? parts[1] : (selected?.label || "")
   }
 )
 

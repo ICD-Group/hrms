@@ -13,11 +13,11 @@ const transformLeaveData = (data) => {
 
 export const getLeaveDates = (leave) => {
 	if (leave.from_date == leave.to_date)
-		return dayjs(leave.from_date).format("D MMM")
+		return dayjs(leave.from_date).format("DD-MM")
 	else
-		return `${dayjs(leave.from_date).format("D MMM")} - ${dayjs(
+		return `${dayjs(leave.from_date).format("DD-MM")} - ${dayjs(
 			leave.to_date
-		).format("D MMM")}`
+		).format("DD-MM")}`
 }
 
 export const myLeaves = createResource({
@@ -53,14 +53,18 @@ export const teamLeaves = createResource({
 
 export const leaveBalance = createResource({
 	url: "hrms.api.get_leave_balance_map",
+	params: {
+		employee: employeeResource.data.name,
+	},
 	auto: true,
 	cache: "hrms:leave_balance",
 	transform: (data) => {
 		// Calculate balance percentage for each leave type
 		return Object.fromEntries(
 			Object.entries(data).map(([leave_type, allocation]) => {
-				allocation.balance_percentage =
-					(allocation.balance_leaves / allocation.allocated_leaves) * 100
+				allocation.balance_percentage = allocation.allocated_leaves
+					? (allocation.balance_leaves / allocation.allocated_leaves) * 100
+					: 0
 				return [leave_type, allocation]
 			})
 		)

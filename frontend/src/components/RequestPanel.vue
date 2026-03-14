@@ -68,7 +68,7 @@ function getSortedRequests(list) {
 		.sort((a, b) => {
 			return new Date(b.creation) - new Date(a.creation)
 		})
-		.splice(0, 10)
+		.slice(0, 10)
 }
 
 onMounted(() => {

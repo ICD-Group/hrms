@@ -149,17 +149,35 @@ class ShiftAssignment(Document):
 
 def has_overlapping_timings(shift_1: str, shift_2: str) -> bool:
 	"""
-	Accepts two shift types and checks whether their timings are overlapping
+	Accepts two shift types and checks whether their timings are overlapping.
+	Handles midnight-spanning shifts correctly by checking both day-0 and day-1 positions.
 	"""
 
 	s1 = frappe.db.get_value("Shift Type", shift_1, ["start_time", "end_time"], as_dict=True)
 	s2 = frappe.db.get_value("Shift Type", shift_2, ["start_time", "end_time"], as_dict=True)
 
-	for d in [s1, s2]:
-		if d.end_time <= d.start_time:
-			d.end_time += timedelta(days=1)
+	s1_midnight = s1.end_time <= s1.start_time
+	s2_midnight = s2.end_time <= s2.start_time
 
-	return s1.end_time > s2.start_time and s1.start_time < s2.end_time
+	if s1_midnight:
+		s1.end_time += timedelta(days=1)
+	if s2_midnight:
+		s2.end_time += timedelta(days=1)
+
+	# Standard overlap check (both on same day-0 reference)
+	overlap = s1.end_time > s2.start_time and s1.start_time < s2.end_time
+
+	# When exactly one shift is midnight-spanning, also check if the regular shift
+	# overlaps with the midnight shift when placed on the next day
+	if not overlap and s1_midnight != s2_midnight:
+		if s1_midnight:
+			# Check if s2 shifted +1 day overlaps with s1
+			overlap = s1.end_time > (s2.start_time + timedelta(days=1)) and s1.start_time < (s2.end_time + timedelta(days=1))
+		else:
+			# Check if s1 shifted +1 day overlaps with s2
+			overlap = (s1.end_time + timedelta(days=1)) > s2.start_time and (s1.start_time + timedelta(days=1)) < s2.end_time
+
+	return overlap
 
 
 @frappe.whitelist()
